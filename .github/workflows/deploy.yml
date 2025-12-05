@@ -1,0 +1,43 @@
+name: 1. Deploy from Zip
+
+on:
+  workflow_dispatch: # Botón manual
+  push:
+    paths:
+      - '**.zip' # Se activa automáticamente si subes un ZIP
+
+jobs:
+  unzip-and-deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Unzip Source
+        run: |
+          # Busca cualquier archivo .zip en la raíz
+          if ls *.zip 1> /dev/null 2>&1; then
+            echo "📦 ZIP detectado. Descomprimiendo..."
+            unzip -o *.zip -d .
+            
+            # Si el zip creó una subcarpeta (ej: Mercado-main/), sacar archivos a la raíz
+            if [ -d "Mercado-main" ]; then
+              cp -r Mercado-main/* .
+              rm -rf Mercado-main
+            fi
+
+            # Limpieza
+            echo "🗑️ Eliminando ZIP original..."
+            rm *.zip
+            
+            # Configurar git para guardar los cambios
+            git config --global user.name 'GitHub Action'
+            git config --global user.email 'action@github.com'
+            git add .
+            git commit -m "Deploy: Unzipped source files"
+            git push
+          else
+            echo "✅ No se encontró archivo .zip. Nada que hacer."
+          fi
