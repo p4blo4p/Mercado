@@ -58,16 +58,13 @@ const MANUAL_OVERRIDES = {
 async function fetchMetrics() {
   const results = {};
   const now = new Date().toISOString();
-  console.log("Iniciando extracción de datos (Yahoo Finance)...");
+  console.log("Iniciando extracción de datos (Yahoo Finance v3)...");
 
-  // Supress warnings y simular navegador real para evitar bloqueos 403 en GitHub Actions
+  // Configuración compatible con Yahoo Finance v3
+  // Eliminamos 'headers' manuales ya que v3 gestiona esto internamente
   yahooFinance.setGlobalConfig({ 
     validation: { logErrors: false },
-    queue: { concurrency: 4 }, // Evitar rate limiting
-    // IMPORTANTE: User-Agent real para evitar bloqueo
-    headers: {
-      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
-    }
+    queue: { concurrency: 4 } // Evitar rate limiting
   });
 
   // 1. Pre-fetch para ratios calculados
