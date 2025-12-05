@@ -60,12 +60,8 @@ async function fetchMetrics() {
   const now = new Date().toISOString();
   console.log("Iniciando extracción de datos (Yahoo Finance v3)...");
 
-  // Configuración compatible con Yahoo Finance v3
-  // Eliminamos 'headers' manuales ya que v3 gestiona esto internamente
-  yahooFinance.setGlobalConfig({ 
-    validation: { logErrors: false },
-    queue: { concurrency: 4 } // Evitar rate limiting
-  });
+  // NOTA: setGlobalConfig eliminado por incompatibilidad con v3.
+  // Usamos la configuración por defecto.
 
   // 1. Pre-fetch para ratios calculados
   let copperPrice = 0;
