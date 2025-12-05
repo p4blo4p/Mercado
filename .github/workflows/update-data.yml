@@ -1,3 +1,4 @@
+
 name: 2. Update Financial Data
 
 on:
@@ -17,12 +18,19 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v3
         with:
-          node-version: '18'
+          node-version: '20'
+
+      - name: Prepare Clean Environment
+        # Borramos package.json antiguo para evitar conflictos de dependencias del frontend (como @google/genai)
+        # y forzamos un package.json mínimo solo para el script
+        run: |
+          rm -f package.json package-lock.json
+          npm init -y
+          npm pkg set type="module"
 
       - name: Install Fetch Script Dependencies
-        # Instalamos SOLO lo necesario para el script, ignorando el resto del proyecto
-        # para evitar errores de versiones o dependencias de UI.
-        run: npm install yahoo-finance2 --no-save
+        # Instalamos yahoo-finance2 v3 (latest)
+        run: npm install yahoo-finance2@latest --no-save
 
       - name: Fetch Data
         run: node scripts/fetch-metrics.js
