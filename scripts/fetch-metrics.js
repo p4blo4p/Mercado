@@ -9,37 +9,39 @@
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import yahooFinance from 'yahoo-finance2';
+// IMPORTANTE: En v3 debemos importar la clase explícitamente para instanciarla
+import { YahooFinance } from 'yahoo-finance2';
+
+const yahooFinance = new YahooFinance();
 
 // Configuración para __dirname en ESM
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // Mapa de IDs internos a Tickers de Yahoo
-// Usamos proxies (ETFs/Futuros) para indicadores que no tienen feed directo gratuito
 const TICKER_MAP = {
   'yield_curve': '^T10Y2Y',
-  'ism_pmi': 'XLI', // Proxy: Industrial Sector ETF
-  'fed_funds': '^IRX', // 13 Week T-Bill
-  'credit_spreads': 'HYG', // High Yield Bond ETF (Inverso al spread)
-  'm2_growth': 'M2SL', // A veces no disponible, usará override
+  'ism_pmi': 'XLI', 
+  'fed_funds': '^IRX', 
+  'credit_spreads': 'HYG', 
+  'm2_growth': 'M2SL', 
   'unemployment': null, 
   'lei': null, 
   'nfp': null,
   'cpi': null,
-  'consumer_conf': 'XLY', // Consumo discrecional
+  'consumer_conf': 'XLY', 
   'buffett': '^GSPC', 
   'cape': '^GSPC', 
-  'bond_vs_stock': null, // Calculado
+  'bond_vs_stock': null, 
   'sp500_margin': null,
   'vix': '^VIX',
   'fear_greed': null,
-  'put_call': '^CPC', // CBOE Put/Call Ratio
+  'put_call': '^CPC', 
   'sp500_ma200': '^GSPC',
   '10y_yield': '^TNX',
   'oil_wti': 'CL=F',
   'dxy': 'DX-Y.NYB',
-  'retail_sales': 'XRT', // Retail ETF
+  'retail_sales': 'XRT', 
   'copper_gold': 'CALCULATED_COPPER_GOLD'
 };
 
@@ -59,9 +61,6 @@ async function fetchMetrics() {
   const results = {};
   const now = new Date().toISOString();
   console.log("Iniciando extracción de datos (Yahoo Finance v3)...");
-
-  // NOTA: setGlobalConfig eliminado por incompatibilidad con v3.
-  // Usamos la configuración por defecto.
 
   // 1. Pre-fetch para ratios calculados
   let copperPrice = 0;
@@ -99,7 +98,6 @@ async function fetchMetrics() {
       }
 
       if (!ticker) {
-        // Usar override manual
         if (MANUAL_OVERRIDES[id]) {
           results[id] = {
             price: MANUAL_OVERRIDES[id].price,
@@ -118,7 +116,6 @@ async function fetchMetrics() {
         throw new Error(`Datos inválidos recibidos para ${ticker}`);
       }
 
-      // Intentar obtener historial
       const queryOptions = { period1: '1mo', interval: '1d' };
       let historyData = [];
       try {
@@ -132,16 +129,13 @@ async function fetchMetrics() {
             }));
         }
       } catch (hErr) {
-        // Ignorar error de historial, usaremos mock
+        // Ignorar error de historial
       }
 
-      // Lógica de Normalización
       let price = quote.regularMarketPrice;
       let change = quote.regularMarketChangePercent || 0;
 
-      // Ajuste para Yields (Yahoo a veces los da multiplicados por 10)
       if (ticker === '^TNX' || ticker === '^IRX' || ticker === '^T10Y2Y') {
-        // Verificación de cordura: Si el yield es > 20%, probablemente esté en puntos base o x10
         if (price > 10) {
            price = price / 10;
            historyData = historyData.map(h => ({ ...h, value: h.value / 10 }));
@@ -159,7 +153,6 @@ async function fetchMetrics() {
 
     } catch (err) {
       console.error(`✗ Falló ${id} (${ticker}): ${err.message}`);
-      // Fallback en caso de error de API para no romper el dashboard
       if (MANUAL_OVERRIDES[id]) {
         results[id] = {
           price: MANUAL_OVERRIDES[id].price,
@@ -172,7 +165,6 @@ async function fetchMetrics() {
     }
   }
 
-  // Asegurar directorio de salida
   const outputDir = path.join(__dirname, '../public/data');
   if (!fs.existsSync(outputDir)){
       fs.mkdirSync(outputDir, { recursive: true });
@@ -189,7 +181,6 @@ async function fetchMetrics() {
 }
 
 function generateMockHistory(basePrice) {
-  // Genera una línea plana con ligero ruido para cuando no hay historial
   return Array(14).fill(0).map((_, i) => ({
     date: new Date(Date.now() - i * 86400000).toISOString().split('T')[0],
     value: basePrice * (1 + (Math.random() * 0.02 - 0.01))
