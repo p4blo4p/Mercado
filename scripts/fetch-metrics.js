@@ -9,7 +9,7 @@
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-// CORRECCIÓN IMPORTANTE: Usar importación por defecto para ESM en v3
+// CORRECCIÓN: Importación por defecto compatible con v3
 import yahooFinance from 'yahoo-finance2';
 
 // Configuración para __dirname en ESM
@@ -21,7 +21,7 @@ const __dirname = path.dirname(__filename);
 // para forzar el uso de MANUAL_OVERRIDES y evitar mostrar precios de ETFs (ej: XLI) como valores del índice.
 const TICKER_MAP = {
   'yield_curve': '^T10Y2Y',
-  'ism_pmi': null, // Usar manual (48.4) en lugar de ETF XLI
+  'ism_pmi': null, // Usar manual
   'fed_funds': '^IRX', 
   'credit_spreads': 'HYG', 
   'm2_growth': 'M2SL', 
@@ -29,7 +29,7 @@ const TICKER_MAP = {
   'lei': null, 
   'nfp': null,
   'cpi': null,
-  'consumer_conf': null, // Usar manual (100+) en lugar de ETF XLY
+  'consumer_conf': null, // Usar manual
   'buffett': '^GSPC', 
   'cape': '^GSPC', 
   'bond_vs_stock': null, 
@@ -46,6 +46,7 @@ const TICKER_MAP = {
 };
 
 // Valores manuales aproximados (Datos Diciembre 2024 / Enero 2025)
+// Estos se usan cuando Yahoo no tiene el dato directo del índice económico
 const MANUAL_OVERRIDES = {
   'ism_pmi': { price: 48.4, change: 0.2 },
   'unemployment': { price: 4.2, change: 0 },
@@ -161,6 +162,7 @@ async function fetchMetrics() {
 
     } catch (err) {
       console.error(`✗ Falló ${id} (${ticker}): ${err.message}`);
+      // Fallback a manual si existe
       if (MANUAL_OVERRIDES[id]) {
         results[id] = {
           price: MANUAL_OVERRIDES[id].price,
