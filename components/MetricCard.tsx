@@ -30,22 +30,23 @@ const MetricCard: React.FC<MetricCardProps> = ({ data }) => {
     try {
       return new URL(url).hostname;
     } catch {
-      return '';
+      return 'google.com';
     }
   };
 
-  const faviconUrl = data.sourceUrl ? `https://www.google.com/s2/favicons?domain=${getHostname(data.sourceUrl)}&sz=32` : '';
-  const sourceName = getHostname(data.sourceUrl || '').replace('www.', '');
+  const domain = getHostname(data.sourceUrl || '');
+  const faviconUrl = `https://www.google.com/s2/favicons?domain=${domain}&sz=32`;
+  const sourceName = domain.replace('www.', '');
 
   return (
     <div 
-      className="bg-surface rounded-xl border border-slate-700 shadow-lg hover:border-blue-500 hover:shadow-blue-500/10 transition-all duration-200 flex flex-col h-[340px] group relative"
+      className="bg-surface rounded-xl border border-slate-700 shadow-lg hover:shadow-xl hover:border-slate-600 transition-all duration-300 flex flex-col h-[340px] group relative"
     >
       {/* Header Section */}
       <div className="p-4 pb-2 flex flex-col justify-between items-start bg-slate-800/30 border-b border-slate-700/50 rounded-t-xl">
         <div className="w-full flex justify-between items-center pr-1">
            <div className="flex items-center gap-1.5 relative">
-             <h3 className="text-slate-400 text-xs font-bold uppercase tracking-wider truncate cursor-default">
+             <h3 className="text-slate-300 text-xs font-bold uppercase tracking-wider truncate cursor-default">
                {data.definition.name}
              </h3>
              {/* Info Icon with Tooltip */}
@@ -57,8 +58,8 @@ const MetricCard: React.FC<MetricCardProps> = ({ data }) => {
                </svg>
                {/* Tooltip Content */}
                {data.definition.description && (
-                 <div className="absolute left-0 bottom-full mb-2 w-64 p-3 bg-slate-800 border border-slate-600 rounded-lg shadow-2xl text-xs text-slate-200 opacity-0 group-hover/info:opacity-100 pointer-events-none transition-opacity z-[100]">
-                   <div className="font-semibold text-blue-300 mb-1">Referencia:</div>
+                 <div className="absolute left-0 bottom-full mb-2 w-64 p-3 bg-slate-800 border border-slate-600 rounded-lg shadow-2xl text-xs text-slate-200 opacity-0 group-hover/info:opacity-100 pointer-events-none transition-opacity z-[60]">
+                   <div className="font-semibold text-blue-300 mb-1">Análisis:</div>
                    {data.definition.description}
                    <div className="absolute left-1.5 -bottom-1 w-2 h-2 bg-slate-800 border-r border-b border-slate-600 transform rotate-45"></div>
                  </div>
@@ -71,7 +72,7 @@ const MetricCard: React.FC<MetricCardProps> = ({ data }) => {
             <span className={`text-2xl font-bold tracking-tight ${data.isSimulated ? 'text-amber-400' : 'text-white'}`} title={data.isSimulated ? "Dato estimado (no en tiempo real)" : "Dato en tiempo real"}>
               {data.currentValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               <span className="text-sm font-medium text-slate-500 ml-1">{data.definition.suffix}</span>
-              {data.isSimulated && <span className="ml-1 text-[10px] text-amber-500/80 align-top">(Est)</span>}
+              {data.isSimulated && <span className="ml-1 text-[10px] text-amber-500/80 align-top cursor-help" title="Fuente de datos alternativa">(Est)</span>}
             </span>
             
             <div className={`text-right ${sentimentColor}`}>
@@ -84,7 +85,7 @@ const MetricCard: React.FC<MetricCardProps> = ({ data }) => {
       </div>
 
       {/* Chart Section */}
-      <div className="flex-1 w-full min-h-0 relative bg-slate-900/20 overflow-hidden">
+      <div className="flex-1 w-full min-h-0 relative bg-slate-900/20 overflow-hidden rounded-b-xl mb-8">
         <ResponsiveContainer width="100%" height="100%">
           <AreaChart data={chartData} margin={{ top: 15, right: 0, left: 0, bottom: 0 }}>
             <defs>
@@ -120,7 +121,7 @@ const MetricCard: React.FC<MetricCardProps> = ({ data }) => {
             />
 
             <Tooltip 
-              contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', color: '#f1f5f9', borderRadius: '6px', fontSize: '12px', padding: '8px' }}
+              contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', color: '#f1f5f9', borderRadius: '6px', fontSize: '12px', padding: '8px', zIndex: 100 }}
               itemStyle={{ color: '#f1f5f9' }}
               formatter={(value: number) => [value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }), 'Valor']}
               labelStyle={{ color: '#94a3b8', marginBottom: '2px' }}
@@ -176,29 +177,31 @@ const MetricCard: React.FC<MetricCardProps> = ({ data }) => {
       </div>
 
       {/* Footer / Source Link Section */}
-      <div className="bg-slate-900/50 border-t border-slate-700/50 p-2 px-4 rounded-b-xl flex justify-end items-center">
-        {data.sourceUrl && (
+      <div className="absolute bottom-0 left-0 right-0 h-9 bg-slate-900/90 border-t border-slate-700/50 px-3 flex justify-between items-center rounded-b-xl z-20 backdrop-blur-sm">
+        <span className="text-[10px] text-slate-500">Verificar en:</span>
+        
+        {data.sourceUrl ? (
           <a 
             href={data.sourceUrl} 
             target="_blank" 
             rel="noopener noreferrer"
-            className="flex items-center gap-2 text-[10px] text-slate-500 hover:text-blue-400 transition-colors bg-slate-800/50 hover:bg-slate-800 px-2 py-1 rounded-full border border-slate-700/50 hover:border-blue-500/30"
-            title={`Ir a fuente de datos: ${data.sourceUrl}`}
+            className="flex items-center gap-1.5 text-[10px] text-slate-300 hover:text-white transition-colors group/link bg-slate-800/50 px-2 py-0.5 rounded-full border border-slate-700 hover:border-slate-500"
+            title={`Verificar dato en ${sourceName}`}
           >
             <img 
               src={faviconUrl} 
-              alt="favicon" 
-              className="w-3.5 h-3.5 rounded-sm opacity-80"
-              onError={(e) => {
-                // Fallback icon if favicon fails
-                e.currentTarget.style.display = 'none';
-              }}
+              alt="icon" 
+              className="w-3.5 h-3.5 rounded-sm"
+              onError={(e) => { e.currentTarget.style.display = 'none'; }}
             />
-            <span className="truncate max-w-[100px]">{sourceName}</span>
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-2.5 h-2.5 ml-0.5">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 6H5.25A2.25 2.25 0 0 0 3 8.25v10.5A2.25 2.25 0 0 0 5.25 21h10.5A2.25 2.25 0 0 0 18 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
+            <span className="truncate max-w-[100px] font-medium">{sourceName}</span>
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-3 h-3 opacity-50 group-hover/link:opacity-100">
+              <path fillRule="evenodd" d="M4.25 5.5a.75.75 0 0 0-.75.75v8.5c0 .414.336.75.75.75h8.5a.75.75 0 0 0 .75-.75v-4a.75.75 0 0 1 1.5 0v4A2.25 2.25 0 0 1 12.75 17h-8.5A2.25 2.25 0 0 1 2 14.75v-8.5A2.25 2.25 0 0 1 4.25 4h5a.75.75 0 0 1 0 1.5h-5Z" clipRule="evenodd" />
+              <path fillRule="evenodd" d="M6.194 12.753a.75.75 0 0 0 1.06.053L16.5 4.44v2.81a.75.75 0 0 0 1.5 0v-4.5a.75.75 0 0 0-.75-.75h-4.5a.75.75 0 0 0 0 1.5h2.553l-9.056 8.194a.75.75 0 0 0-.053 1.06Z" clipRule="evenodd" />
             </svg>
           </a>
+        ) : (
+           <span className="text-[10px] text-slate-600">Fuente no disponible</span>
         )}
       </div>
     </div>
