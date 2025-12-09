@@ -9,15 +9,11 @@ interface MetricCardProps {
 
 const MetricCard: React.FC<MetricCardProps> = ({ data }) => {
   const isPositive = data.change >= 0;
-  // Visual Sentiment: Green if Up? Or Green if "Good"? 
-  // Standard finance UI: Green = Price Up, Red = Price Down.
-  // We will stick to price movement color for the main value.
   const sentimentColor = isPositive ? '#10b981' : '#ef4444'; 
 
   const chartData = useMemo(() => data.history, [data.history]);
   const thresholds = data.definition.thresholds;
 
-  // Calculate domain for Y-Axis
   const allValues = data.history.map(d => d.value);
   if (thresholds?.goodLevel !== undefined) allValues.push(thresholds.goodLevel);
   if (thresholds?.badLevel !== undefined) allValues.push(thresholds.badLevel);
@@ -26,7 +22,6 @@ const MetricCard: React.FC<MetricCardProps> = ({ data }) => {
   const maxValue = Math.max(...allValues);
   const range = maxValue - minValue;
   
-  // Add padding so lines aren't on the absolute edge
   const padding = range === 0 ? minValue * 0.1 : range * 0.15; 
   const yDomain = [minValue - padding, maxValue + padding];
 
@@ -40,7 +35,8 @@ const MetricCard: React.FC<MetricCardProps> = ({ data }) => {
   return (
     <div 
       onClick={handleCardClick}
-      className="bg-surface rounded-xl border border-slate-700 shadow-lg hover:border-blue-500 hover:shadow-blue-500/10 transition-all duration-200 flex flex-col h-[320px] overflow-hidden group cursor-pointer relative"
+      // Removed overflow-hidden from parent so tooltip can pop out
+      className="bg-surface rounded-xl border border-slate-700 shadow-lg hover:border-blue-500 hover:shadow-blue-500/10 transition-all duration-200 flex flex-col h-[320px] group cursor-pointer relative"
       role="link"
       tabIndex={0}
       title={`Ver fuente: ${data.sourceUrl}`}
@@ -55,9 +51,9 @@ const MetricCard: React.FC<MetricCardProps> = ({ data }) => {
       </div>
 
       {/* Header Section */}
-      <div className="p-4 pb-2 flex flex-col justify-between items-start bg-slate-800/30 border-b border-slate-700/50">
+      <div className="p-4 pb-2 flex flex-col justify-between items-start bg-slate-800/30 border-b border-slate-700/50 rounded-t-xl">
         <div className="w-full flex justify-between items-center pr-6">
-           <div className="flex items-center gap-1.5 overflow-hidden">
+           <div className="flex items-center gap-1.5">
              <h3 className="text-slate-400 text-xs font-bold uppercase tracking-wider truncate">
                {data.definition.name}
              </h3>
@@ -71,7 +67,7 @@ const MetricCard: React.FC<MetricCardProps> = ({ data }) => {
                </svg>
                {/* Tooltip Content */}
                {data.definition.description && (
-                 <div className="absolute left-0 bottom-full mb-2 w-64 p-2.5 bg-slate-800 border border-slate-600 rounded-lg shadow-xl text-xs text-slate-200 z-50 opacity-0 group-hover/info:opacity-100 pointer-events-none transition-opacity">
+                 <div className="absolute left-0 bottom-full mb-2 w-64 p-3 bg-slate-800 border border-slate-600 rounded-lg shadow-2xl text-xs text-slate-200 z-50 opacity-0 group-hover/info:opacity-100 pointer-events-none transition-opacity">
                    <div className="font-semibold text-blue-300 mb-1">Referencia:</div>
                    {data.definition.description}
                    <div className="absolute left-1.5 -bottom-1 w-2 h-2 bg-slate-800 border-r border-b border-slate-600 transform rotate-45"></div>
@@ -97,8 +93,8 @@ const MetricCard: React.FC<MetricCardProps> = ({ data }) => {
         </div>
       </div>
 
-      {/* Chart Section */}
-      <div className="flex-1 w-full min-h-0 relative bg-slate-900/20">
+      {/* Chart Section - Added overflow-hidden here to clip chart to corners */}
+      <div className="flex-1 w-full min-h-0 relative bg-slate-900/20 overflow-hidden rounded-b-xl">
         <ResponsiveContainer width="100%" height="100%">
           <AreaChart data={chartData} margin={{ top: 15, right: 0, left: 0, bottom: 0 }}>
             <defs>
@@ -141,7 +137,6 @@ const MetricCard: React.FC<MetricCardProps> = ({ data }) => {
               cursor={{ stroke: '#475569', strokeWidth: 1 }}
             />
             
-            {/* Reference Lines for Good/Bad Thresholds */}
             {thresholds?.goodLevel !== undefined && (
                <ReferenceLine 
                  y={thresholds.goodLevel} 

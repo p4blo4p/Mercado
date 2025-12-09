@@ -9,27 +9,27 @@
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-// IMPORTANTE: En v3 debemos importar la clase explícitamente para instanciarla
-import { YahooFinance } from 'yahoo-finance2';
-
-const yahooFinance = new YahooFinance();
+// CORRECCIÓN IMPORTANTE: Usar importación por defecto para ESM en v3
+import yahooFinance from 'yahoo-finance2';
 
 // Configuración para __dirname en ESM
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // Mapa de IDs internos a Tickers de Yahoo
+// Se establecen en NULL los indicadores económicos que no tienen un ticker directo de índice en Yahoo
+// para forzar el uso de MANUAL_OVERRIDES y evitar mostrar precios de ETFs (ej: XLI) como valores del índice.
 const TICKER_MAP = {
   'yield_curve': '^T10Y2Y',
-  'ism_pmi': 'XLI', 
+  'ism_pmi': null, // Usar manual (48.4) en lugar de ETF XLI
   'fed_funds': '^IRX', 
   'credit_spreads': 'HYG', 
   'm2_growth': 'M2SL', 
-  'unemployment': null, 
+  'unemployment': null, // Usar manual
   'lei': null, 
   'nfp': null,
   'cpi': null,
-  'consumer_conf': 'XLY', 
+  'consumer_conf': null, // Usar manual (100+) en lugar de ETF XLY
   'buffett': '^GSPC', 
   'cape': '^GSPC', 
   'bond_vs_stock': null, 
@@ -41,17 +41,20 @@ const TICKER_MAP = {
   '10y_yield': '^TNX',
   'oil_wti': 'CL=F',
   'dxy': 'DX-Y.NYB',
-  'retail_sales': 'XRT', 
+  'retail_sales': null, // Usar manual
   'copper_gold': 'CALCULATED_COPPER_GOLD'
 };
 
-// Valores manuales aproximados (2025) para datos sin feed en Yahoo
+// Valores manuales aproximados (Datos Diciembre 2024 / Enero 2025)
 const MANUAL_OVERRIDES = {
+  'ism_pmi': { price: 48.4, change: 0.2 },
   'unemployment': { price: 4.2, change: 0 },
   'cpi': { price: 2.7, change: 0.1 },
   'm2_growth': { price: 1.8, change: 0.1 },
   'lei': { price: 99.4, change: -0.2 },
   'nfp': { price: 142, change: 12 },
+  'consumer_conf': { price: 108.7, change: 2.1 },
+  'retail_sales': { price: 2.8, change: 0.4 },
   'sp500_margin': { price: 12.1, change: 0.1 },
   'fear_greed': { price: 48, change: 2 },
   'bond_vs_stock': { price: 0.85, change: 0.05 }
@@ -97,6 +100,7 @@ async function fetchMetrics() {
         continue;
       }
 
+      // CASO ESPECIAL: INDICADORES SIN TICKER (USAR MANUAL)
       if (!ticker) {
         if (MANUAL_OVERRIDES[id]) {
           results[id] = {
@@ -105,6 +109,9 @@ async function fetchMetrics() {
             history: generateMockHistory(MANUAL_OVERRIDES[id].price),
             lastUpdated: now
           };
+          console.log(`✓ Manual ${id}: ${MANUAL_OVERRIDES[id].price}`);
+        } else {
+          console.warn(`! Faltan datos para ${id} y no hay override manual.`);
         }
         continue;
       }
@@ -135,8 +142,9 @@ async function fetchMetrics() {
       let price = quote.regularMarketPrice;
       let change = quote.regularMarketChangePercent || 0;
 
+      // Ajustes de escala para bonos
       if (ticker === '^TNX' || ticker === '^IRX' || ticker === '^T10Y2Y') {
-        if (price > 10) {
+        if (price > 15) { // Si viene en base 100 (ej: 40.0 para 4%)
            price = price / 10;
            historyData = historyData.map(h => ({ ...h, value: h.value / 10 }));
         }
