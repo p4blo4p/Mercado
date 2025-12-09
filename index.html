@@ -64,6 +64,164 @@
 </head>
   <body>
     <div id="root"></div>
+
+    <!-- Static Analysis Section (Added per request) -->
+    <div class="max-w-7xl mx-auto px-4 py-12 text-slate-300 font-sans border-t border-slate-800 mt-8">
+      
+      <h2 class="text-2xl font-bold text-indigo-400 mb-6 flex items-center gap-2">
+        <span>📊</span> Indicadores Actuales del Mercado Bursátil
+      </h2>
+      
+      <div class="overflow-x-auto mb-12 rounded-xl border border-slate-700 shadow-xl">
+        <table class="w-full text-left text-sm">
+          <thead class="bg-slate-800 text-slate-200 uppercase tracking-wider font-bold">
+            <tr>
+              <th class="p-4 border-b border-slate-600">Indicador</th>
+              <th class="p-4 border-b border-slate-600">Tipo</th>
+              <th class="p-4 border-b border-slate-600">Valor Actual (Aprox.)</th>
+              <th class="p-4 border-b border-slate-600">Rango/Media</th>
+              <th class="p-4 border-b border-slate-600">Implicación</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-700 bg-slate-900/50">
+            <tr class="hover:bg-slate-800/50 transition-colors">
+              <td class="p-4 font-medium text-white">VIX (Volatilidad)</td>
+              <td class="p-4 text-slate-400">Sentimiento</td>
+              <td class="p-4">∼16.30</td>
+              <td class="p-4">Media: ∼19.4</td>
+              <td class="p-4 text-green-400">Neutral/Calma: Volatilidad esperada baja, complacencia.</td>
+            </tr>
+            <tr class="hover:bg-slate-800/50 transition-colors">
+              <td class="p-4 font-medium text-white">Fear & Greed Index</td>
+              <td class="p-4 text-slate-400">Sentimiento</td>
+              <td class="p-4">∼50 (Neutral)</td>
+              <td class="p-4">0 (Miedo) - 100 (Codicia)</td>
+              <td class="p-4 text-yellow-400">Neutral: Sin emoción fuerte actual.</td>
+            </tr>
+            <tr class="hover:bg-slate-800/50 transition-colors">
+              <td class="p-4 font-medium text-white">Buffett Indicator</td>
+              <td class="p-4 text-slate-400">Valoración</td>
+              <td class="p-4 text-red-400 font-bold">∼220%</td>
+              <td class="p-4">Media: ∼85%-100%</td>
+              <td class="p-4 text-red-400">Bajista (Extremo): Acciones muy caras vs PIB.</td>
+            </tr>
+            <tr class="hover:bg-slate-800/50 transition-colors">
+              <td class="p-4 font-medium text-white">P/E Ratio (S&P 500)</td>
+              <td class="p-4 text-slate-400">Valoración</td>
+              <td class="p-4 text-red-400 font-bold">∼28 - 30</td>
+              <td class="p-4">Media Histórica: ∼16</td>
+              <td class="p-4 text-red-400">Bajista: Mercado caro, se paga mucho por beneficios.</td>
+            </tr>
+            <tr class="hover:bg-slate-800/50 transition-colors">
+              <td class="p-4 font-medium text-white">Curva Rendimiento</td>
+              <td class="p-4 text-slate-400">Macro</td>
+              <td class="p-4 text-red-400 font-bold">Invertida (-0.27%)</td>
+              <td class="p-4">Positiva (> 0)</td>
+              <td class="p-4 text-red-400">Recesión: Predictor fiable de crisis futura.</td>
+            </tr>
+            <tr class="hover:bg-slate-800/50 transition-colors">
+              <td class="p-4 font-medium text-white">Bono 10Y</td>
+              <td class="p-4 text-slate-400">Macro</td>
+              <td class="p-4">∼4.14%</td>
+              <td class="p-4">Variable (3.8 - 4.8%)</td>
+              <td class="p-4 text-yellow-400">Incierto: Niveles manejables, peligroso si sube rápido.</td>
+            </tr>
+            <tr class="hover:bg-slate-800/50 transition-colors">
+              <td class="p-4 font-medium text-white">Petróleo (WTI)</td>
+              <td class="p-4 text-slate-400">Macro</td>
+              <td class="p-4">∼59.00 USD</td>
+              <td class="p-4">Variable</td>
+              <td class="p-4 text-blue-400">Neutro: Baja presión inflacionaria.</td>
+            </tr>
+            <tr class="hover:bg-slate-800/50 transition-colors">
+              <td class="p-4 font-medium text-white">ISM Manufacturero</td>
+              <td class="p-4 text-slate-400">Macro</td>
+              <td class="p-4 text-orange-400">∼48.2</td>
+              <td class="p-4">Umbral: 50</td>
+              <td class="p-4 text-orange-400">Desaceleración: Contracción industrial.</td>
+            </tr>
+          </tbody>
+        </table>
+        <div class="p-2 bg-slate-800 text-xs text-slate-500 text-right">Nota: Valores aproximados a Dic 2025.</div>
+      </div>
+
+      <h3 class="text-xl font-bold text-indigo-400 mb-4 flex items-center gap-2">
+        <span>🧐</span> Análisis Conclusivo de la Tensión
+      </h3>
+      <div class="prose prose-invert max-w-none text-slate-300 mb-12 bg-slate-800/30 p-6 rounded-xl border border-slate-700">
+        <p class="mb-4">
+          Existe una clara <strong>tensión en el mercado</strong>. Por un lado, los indicadores de Sentimiento (VIX, Fear & Greed) apuntan a una 
+          <span class="text-green-400 font-semibold"> calma o neutralidad</span>, sugiriendo que los inversores no anticipan caídas inminentes. 
+          Sin embargo, esta complacencia técnica contrasta drásticamente con los fundamentales.
+        </p>
+        <p class="mb-4">
+          Los indicadores de Valoración (Buffett Indicator, P/E) y Macro (Curva Invertida, ISM) gritan 
+          <span class="text-red-400 font-semibold"> advertencia</span>. El mercado está históricamente caro en un entorno de desaceleración económica subyacente.
+        </p>
+        <p class="font-semibold border-l-4 border-indigo-500 pl-4">
+          Conclusión: El mercado vive una divergencia. Los precios suben por inercia y sentimiento, mientras la economía real y las valoraciones sugieren cautela extrema. 
+          Cualquier sorpresa negativa podría provocar una corrección rápida para alinear la realidad con el precio.
+        </p>
+      </div>
+
+      <h3 class="text-xl font-bold text-indigo-400 mb-6 flex items-center gap-2">
+        <span>🔗</span> Correlación y Causalidad
+      </h3>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
+        <!-- Correlación -->
+        <div class="bg-slate-900 rounded-xl border border-slate-700 shadow-lg overflow-hidden">
+          <div class="bg-slate-800 p-3 font-bold text-slate-200 border-b border-slate-600">Correlación (Se mueven juntos)</div>
+          <table class="w-full text-sm text-left">
+            <tbody class="divide-y divide-slate-700">
+              <tr>
+                <td class="p-3 font-medium text-indigo-300">VIX vs S&P 500</td>
+                <td class="p-3 text-slate-400">Negativa Fuerte. Si S&P cae, VIX sube (miedo).</td>
+              </tr>
+              <tr>
+                <td class="p-3 font-medium text-indigo-300">Tasa 10Y vs ISM</td>
+                <td class="p-3 text-slate-400">Positiva. Economía fuerte sube tasas.</td>
+              </tr>
+              <tr>
+                <td class="p-3 font-medium text-indigo-300">Valoración vs Curva</td>
+                <td class="p-3 text-slate-400">Negativa. Sobrevaloración precede inversión de curva.</td>
+              </tr>
+              <tr>
+                <td class="p-3 font-medium text-indigo-300">Petróleo vs Tasa 10Y</td>
+                <td class="p-3 text-slate-400">Positiva. Petróleo alto impulsa inflación y tasas.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Causalidad -->
+        <div class="bg-slate-900 rounded-xl border border-slate-700 shadow-lg overflow-hidden">
+          <div class="bg-slate-800 p-3 font-bold text-slate-200 border-b border-slate-600">Causalidad (Predictivo)</div>
+          <table class="w-full text-sm text-left">
+            <tbody class="divide-y divide-slate-700">
+              <tr>
+                <td class="p-3 font-medium text-purple-300">Curva Invertida</td>
+                <td class="p-3 text-slate-400">Predice <strong>Recesión</strong> (6-18 meses).</td>
+              </tr>
+              <tr>
+                <td class="p-3 font-medium text-purple-300">Valoración Alta</td>
+                <td class="p-3 text-slate-400">Predice <strong>Bajos Retornos</strong> a largo plazo.</td>
+              </tr>
+              <tr>
+                <td class="p-3 font-medium text-purple-300">ISM < 50</td>
+                <td class="p-3 text-slate-400">Causa <strong>Menores Beneficios</strong> empresariales.</td>
+              </tr>
+              <tr>
+                <td class="p-3 font-medium text-purple-300">VIX Extremo</td>
+                <td class="p-3 text-slate-400">Señal contraria de <strong>Rebote/Compra</strong>.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+
     <script type="module" src="/index.tsx"></script>
   </body>
 </html>
