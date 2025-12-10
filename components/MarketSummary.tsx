@@ -116,6 +116,63 @@ const MarketSummary: React.FC = () => {
             </div>
         </div>
       </div>
+
+      {/* --- SECCIÓN NUEVA: ESTRATEGIA TÉCNICA --- */}
+      <div className="border-t border-slate-800 pt-10">
+          <div className="flex items-center gap-3 mb-6">
+             <div className="p-2 bg-purple-500/10 rounded-lg"><span className="text-2xl">📈</span></div>
+             <h3 className="text-xl font-bold text-white">Estrategia Técnica: Qué buscar en la gráfica</h3>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {/* Card A: MM200 */}
+              <div className="bg-slate-800/40 border border-slate-700 p-5 rounded-xl hover:border-purple-500/50 transition-colors">
+                  <h4 className="font-bold text-purple-300 mb-2 text-sm uppercase">A. Media Móvil 200 (MM200)</h4>
+                  <p className="text-slate-400 text-xs mb-3">La "línea en la arena" de los grandes fondos. Promedio de precios de 200 días.</p>
+                  <ul className="text-xs space-y-2 text-slate-300">
+                      <li className="flex gap-2">
+                          <span className="text-emerald-400 font-bold">● Compra:</span>
+                          Si el precio rebota al tocarla o cruza hacia arriba.
+                      </li>
+                      <li className="flex gap-2">
+                          <span className="text-red-400 font-bold">● Venta:</span>
+                          Si el precio la cruza hacia abajo con fuerza.
+                      </li>
+                  </ul>
+              </div>
+
+              {/* Card B: RSI */}
+              <div className="bg-slate-800/40 border border-slate-700 p-5 rounded-xl hover:border-purple-500/50 transition-colors">
+                  <h4 className="font-bold text-purple-300 mb-2 text-sm uppercase">B. RSI (Divergencias)</h4>
+                  <p className="text-slate-400 text-xs mb-3">No mires solo "sobrecompra" ({'>'}70). Busca divergencias.</p>
+                  <ul className="text-xs space-y-2 text-slate-300">
+                      <li className="flex gap-2">
+                          <span className="text-emerald-400 font-bold">● Señal Real:</span>
+                          Precio hace un <u>nuevo mínimo</u>, pero el RSI hace un <u>mínimo más alto</u>.
+                      </li>
+                      <li className="pl-4 text-slate-500 italic">
+                          "Los vendedores se agotan aunque el precio baje". Anticipa rebote.
+                      </li>
+                  </ul>
+              </div>
+
+              {/* Card C: Volumen */}
+              <div className="bg-slate-800/40 border border-slate-700 p-5 rounded-xl hover:border-purple-500/50 transition-colors">
+                  <h4 className="font-bold text-purple-300 mb-2 text-sm uppercase">C. Volumen (La Verdad)</h4>
+                  <p className="text-slate-400 text-xs mb-3">El precio puede mentir, el volumen no. Es la "gasolina".</p>
+                  <ul className="text-xs space-y-2 text-slate-300">
+                      <li className="flex gap-2">
+                          <span className="text-red-400 font-bold">● Falsa Subida:</span>
+                          Precio sube, pero volumen baja. Probable caída pronto.
+                      </li>
+                      <li className="flex gap-2">
+                          <span className="text-emerald-400 font-bold">● Ruptura Válida:</span>
+                          Rompe resistencia (techo) con <u>mucho volumen</u>.
+                      </li>
+                  </ul>
+              </div>
+          </div>
+      </div>
     </div>
   );
 };

@@ -42,9 +42,6 @@ const METRIC_CONFIG = {
     // Commodities for Ratio
     'copper': { yahoo: 'HG=F', tv: 'COMEX:HG1!', stooq: 'HG.F' },
     'gold': { yahoo: 'GC=F', tv: 'COMEX:GC1!', stooq: 'GC.F' },
-
-    // Economic / Manual Fallbacks (Normally fetched manually or via specific gov APIs, but here we define overrides)
-    // NOTE: For strictly economic data (PMI, CPI), we use MANUAL OVERRIDES by default unless we implement specific FRED scraping.
 };
 
 // --- DATOS MANUALES (Respaldo Final y Datos Macro Mensuales) ---
@@ -72,15 +69,48 @@ const MANUAL_OVERRIDES = {
 // --- CLASE DATA FETCHER ---
 class DataFetcher {
     constructor() {
-        this.userAgent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36';
+        // Rotación de User-Agents para evitar bloqueos
+        this.userAgents = [
+            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36',
+            'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+            'Mozilla/5.0 (X11; Linux x86_64; rv:109.0) Gecko/20100101 Firefox/115.0'
+        ];
+    }
+
+    getUA() {
+        return this.userAgents[Math.floor(Math.random() * this.userAgents.length)];
+    }
+
+    // Helper: Reconstruir historial visual cuando la fuente solo da precio actual
+    generateSyntheticHistory(current, changePercent) {
+        const history = [];
+        const volatility = current * 0.008; // 0.8% volatilidad
+        let pointer = current;
+        
+        // Empezamos desde hoy hacia atrás 90 días
+        for (let i = 0; i < 90; i++) {
+            history.push({
+                date: new Date(Date.now() - i * 86400000).toISOString().split('T')[0],
+                value: parseFloat(pointer.toFixed(2))
+            });
+            
+            // "Deshacer" el cambio diario para estimar el pasado
+            // Si la tendencia es positiva, restamos para ir al pasado
+            const dailyDrift = (changePercent / 100 / 10) * current; // Drift suave
+            const noise = (Math.random() - 0.5) * volatility;
+            
+            pointer = pointer - dailyDrift + noise;
+        }
+        return history.reverse();
     }
 
     // Nivel 1: Yahoo Finance API
     async fetchYahoo(ticker) {
         if (!ticker) return null;
-        const url = `https://query1.finance.yahoo.com/v8/finance/chart/${ticker}?interval=1d&range=3mo`;
+        // Pedimos 1 año (1y) para tener mejores gráficas
+        const url = `https://query1.finance.yahoo.com/v8/finance/chart/${ticker}?interval=1d&range=1y`;
         try {
-            const res = await fetch(url, { headers: { 'User-Agent': this.userAgent } });
+            const res = await fetch(url, { headers: { 'User-Agent': this.getUA() } });
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
             const json = await res.json();
             const result = json.chart?.result?.[0];
@@ -92,19 +122,23 @@ class DataFetcher {
             const quotes = result.indicators.quote[0].close || [];
             
             for (let i = 0; i < timestamps.length; i++) {
-                if (quotes[i]) {
+                if (quotes[i] !== null && quotes[i] !== undefined) {
                     history.push({
                         date: new Date(timestamps[i] * 1000).toISOString().split('T')[0],
-                        value: quotes[i]
+                        value: parseFloat(quotes[i].toFixed(2))
                     });
                 }
             }
 
+            const currentPrice = meta.regularMarketPrice;
+            const prevClose = meta.chartPreviousClose;
+            const changeP = ((currentPrice - prevClose) / prevClose) * 100;
+
             return {
                 source: 'Yahoo',
-                price: meta.regularMarketPrice,
-                changePercent: ((meta.regularMarketPrice - meta.chartPreviousClose) / meta.chartPreviousClose) * 100,
-                history: history.reverse()
+                price: currentPrice,
+                changePercent: changeP,
+                history: history
             };
         } catch (e) {
             // console.warn(`   [Yahoo] Falló para ${ticker}: ${e.message}`);
@@ -116,7 +150,6 @@ class DataFetcher {
     async fetchTradingView(tvTicker) {
         if (!tvTicker) return null;
         // Parse ticker "EXCHANGE:SYMBOL"
-        const [exchange, symbol] = tvTicker.split(':');
         const url = 'https://scanner.tradingview.com/america/scan';
         
         try {
@@ -143,7 +176,6 @@ class DataFetcher {
                 history: this.generateSyntheticHistory(price, changePercent) // TV Scanner doesn't give history, we simulate it based on trend
             };
         } catch (e) {
-            // console.warn(`   [TradingView] Falló para ${tvTicker}: ${e.message}`);
             return null;
         }
     }
@@ -153,7 +185,7 @@ class DataFetcher {
         if (!ticker) return null;
         const url = `https://stooq.com/q/l/?s=${ticker}&f=sd2t2ohlc&h&e=csv`;
         try {
-            const res = await fetch(url, { headers: { 'User-Agent': this.userAgent } });
+            const res = await fetch(url, { headers: { 'User-Agent': this.getUA() } });
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
             const text = await res.text();
             // Parse CSV: Symbol,Date,Time,Open,High,Low,Close
@@ -176,7 +208,6 @@ class DataFetcher {
                 history: this.generateSyntheticHistory(close, changePercent)
             };
         } catch (e) {
-            // console.warn(`   [Stooq] Falló para ${ticker}: ${e.message}`);
             return null;
         }
     }
@@ -186,7 +217,7 @@ class DataFetcher {
         if (!slug) return null;
         const url = `https://www.marketwatch.com/investing/${slug}`;
         try {
-            const res = await fetch(url, { headers: { 'User-Agent': this.userAgent } });
+            const res = await fetch(url, { headers: { 'User-Agent': this.getUA() } });
             const html = await res.text();
             
             // Regex para buscar metadatos
@@ -205,32 +236,8 @@ class DataFetcher {
             }
             throw new Error('Regex failed');
         } catch (e) {
-            // console.warn(`   [MarketWatch] Falló para ${slug}: ${e.message}`);
             return null;
         }
-    }
-
-    // Helper: Reconstruir historial visual cuando la fuente solo da precio actual
-    generateSyntheticHistory(current, changePercent) {
-        const history = [];
-        const volatility = current * 0.005; // 0.5% volatilidad base
-        let pointer = current;
-        
-        // Empezamos desde hoy hacia atrás
-        for (let i = 0; i < 60; i++) {
-            history.push({
-                date: new Date(Date.now() - i * 86400000).toISOString().split('T')[0],
-                value: pointer
-            });
-            
-            // "Deshacer" el cambio diario para estimar el pasado
-            // Si la tendencia es positiva, restamos para ir al pasado
-            const dailyDrift = (changePercent / 100 / 5) * current; // Drift suave
-            const noise = (Math.random() - 0.5) * volatility;
-            
-            pointer = pointer - dailyDrift + noise;
-        }
-        return history.reverse();
     }
 }
 
@@ -240,10 +247,6 @@ async function run() {
     const fetcher = new DataFetcher();
     const results = {};
     const now = new Date().toISOString();
-
-    // 1. Obtener Metales para Ratio (Cobre/Oro)
-    let copperPrice = null;
-    let goldPrice = null;
 
     // Helper para obtener dato intentando todas las fuentes
     async function getData(id, config) {
@@ -274,25 +277,18 @@ async function run() {
                 data.price = data.price / 10;
                 data.history = data.history.map(h => ({...h, value: h.value / 10}));
             }
-            // Si es Cobre, Yahoo da $/lb, necesitamos $/oz para el ratio
-            if (id === 'copper' && data.source === 'Yahoo') {
-               // 1 lb = 14.5833 oz troy
-               // data.price está en $/lb. Queremos $/oz
-               // NO, esperamos para el ratio
-            }
+            // Normalizar decimales
+            data.price = parseFloat(data.price.toFixed(4));
         }
 
         return data;
     }
 
-    // Obtener Commodities
+    // 1. Obtener Commodities para Ratio (Cobre/Oro)
     const copperData = await getData('copper', METRIC_CONFIG['copper']);
     const goldData = await getData('gold', METRIC_CONFIG['gold']);
     
-    // Obtener Resto de Métricas
-    const allMetricIds = Object.keys({ ...METRIC_CONFIG, ...MANUAL_OVERRIDES }); // Unir claves
-    
-    // Lista única de IDs a procesar (excluyendo copper/gold auxiliares)
+    // 2. Obtener Resto de Métricas
     const metricsToProcess = [
         'yield_curve', 'ism_pmi', 'fed_funds', 'credit_spreads', 'm2_growth',
         'unemployment', 'lei', 'nfp', 'cpi', 'consumer_conf', 'buffett', 'cape',
@@ -321,7 +317,6 @@ async function run() {
                 };
             } else {
                 console.warn(`⚠️ [FAIL] No se encontró dato para ${id}`);
-                // Fallback de emergencia
                 result = { price: 0, changePercent: 0, history: [], source: 'Error' };
             }
         } else {
@@ -336,10 +331,12 @@ async function run() {
         };
     }
 
-    // C. Calcular Ratio Cobre/Oro Especial
+    // 3. Calcular Ratio Cobre/Oro Especial
     if (copperData && goldData) {
         // Yahoo da Cobre en $/lb. Oro en $/oz.
-        // Convertir Cobre a $/oz: Price($/lb) / 14.5833
+        // Convertir Cobre a $/oz: Price($/lb) * 14.5833
+        // Corrección: 1 Troy Ounce = 0.0685714 Pounds. Or 1 lb = 14.5833 Troy Oz.
+        // Price per pound / 14.5833 = Price per ounce
         const copperPerOz = copperData.price / 14.5833;
         const ratio = copperPerOz / goldData.price;
         
@@ -347,7 +344,7 @@ async function run() {
         
         results['copper_gold'] = {
             price: ratio,
-            changePercent: copperData.changePercent - goldData.changePercent, // Dif relativa
+            changePercent: copperData.changePercent - goldData.changePercent, 
             history: fetcher.generateSyntheticHistory(ratio, 0),
             lastUpdated: now
         };
