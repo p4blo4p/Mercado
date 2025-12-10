@@ -21,6 +21,8 @@
     "@types/react-dom": "*",
     "@vitejs/plugin-react": "*",
     "vite": "*",
-    "typescript": "*"
+    "typescript": "*",
+    "yahoo-finance2": "*",
+    "axio": "*"
   }
 }
