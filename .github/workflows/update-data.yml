@@ -4,6 +4,8 @@ name: 2. Update Financial Data
 on:
   schedule:
     - cron: '0 10 * * *' # Ejecutar todos los días a las 10:00 UTC
+  push:
+    branches: ["main"] # SE DISPARA AL SUBIR CODIGO
   workflow_dispatch: # Botón manual
 
 jobs:
@@ -21,16 +23,16 @@ jobs:
           node-version: '20'
 
       - name: Prepare Clean Environment
-        # Borramos package.json antiguo para evitar conflictos de dependencias del frontend (como @google/genai)
-        # y forzamos un package.json mínimo solo para el script
         run: |
           rm -f package.json package-lock.json
           npm init -y
           npm pkg set type="module"
 
       - name: Install Fetch Script Dependencies
-        # Instalamos yahoo-finance2 v3 (latest)
-        run: npm install yahoo-finance2@latest --no-save
+        # Instalamos yahoo-finance2 v3 (latest) solo si fuera necesario, 
+        # pero el script actual es nativo. Dejamos esto por si acaso en el futuro.
+        # Al ser nativo ahora, realmente no necesita deps, pero mantenemos el clean env.
+        run: echo "Environment prepared."
 
       - name: Fetch Data
         run: node scripts/fetch-metrics.js

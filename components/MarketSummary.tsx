@@ -31,7 +31,7 @@ const MarketSummary: React.FC = () => {
               <tr className="hover:bg-slate-800/60 transition-colors bg-slate-900/20">
                 <td className="p-4 font-medium text-white">VIX (Volatilidad)</td>
                 <td className="p-4 text-slate-500 hidden sm:table-cell">Sentimiento</td>
-                <td className="p-4 font-mono text-emerald-400">∼15.50</td>
+                <td className="p-4 font-mono text-emerald-400">∼17.00</td>
                 <td className="p-4 text-slate-500 hidden md:table-cell">Media: ∼19.4</td>
                 <td className="p-4"><span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-emerald-400/10 text-emerald-400">Calma / Complacencia</span></td>
               </tr>
@@ -53,17 +53,17 @@ const MarketSummary: React.FC = () => {
               </tr>
               {/* P/E */}
               <tr className="hover:bg-slate-800/60 transition-colors">
-                <td className="p-4 font-medium text-white">P/E Ratio (S&P 500)</td>
+                <td className="p-4 font-medium text-white">CAPE Ratio</td>
                 <td className="p-4 text-slate-500 hidden sm:table-cell">Valoración</td>
-                <td className="p-4 font-mono text-red-400 font-bold">∼28.5</td>
-                <td className="p-4 text-slate-500 hidden md:table-cell">Media: ∼16.0</td>
+                <td className="p-4 font-mono text-red-400 font-bold">∼36.2</td>
+                <td className="p-4 text-slate-500 hidden md:table-cell">Media: ∼17.0</td>
                 <td className="p-4"><span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-400/10 text-red-400">Mercado Caro</span></td>
               </tr>
               {/* Curva */}
               <tr className="hover:bg-slate-800/60 transition-colors bg-slate-900/20">
                 <td className="p-4 font-medium text-white">Curva (10Y-2Y)</td>
                 <td className="p-4 text-slate-500 hidden sm:table-cell">Macro</td>
-                <td className="p-4 font-mono text-emerald-400 font-bold">+0.15%</td>
+                <td className="p-4 font-mono text-emerald-400 font-bold">+0.16%</td>
                 <td className="p-4 text-slate-500 hidden md:table-cell">Positiva ({'>'} 0)</td>
                 <td className="p-4"><span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-emerald-400/10 text-emerald-400">Normalizándose</span></td>
               </tr>
@@ -71,7 +71,7 @@ const MarketSummary: React.FC = () => {
               <tr className="hover:bg-slate-800/60 transition-colors">
                 <td className="p-4 font-medium text-white">Bono 10Y</td>
                 <td className="p-4 text-slate-500 hidden sm:table-cell">Macro</td>
-                <td className="p-4 font-mono text-yellow-400">∼4.45%</td>
+                <td className="p-4 font-mono text-yellow-400">∼4.19%</td>
                 <td className="p-4 text-slate-500 hidden md:table-cell">Rango: 3.5 - 5.0%</td>
                 <td className="p-4"><span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-400/10 text-yellow-400">Presión sobre acciones</span></td>
               </tr>
