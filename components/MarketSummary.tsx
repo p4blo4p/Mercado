@@ -1,157 +1,135 @@
+
 import React from 'react';
 
 const MarketSummary: React.FC = () => {
   return (
-    <div className="mt-12 border-t border-slate-800 pt-12">
-      <h2 className="text-2xl font-bold text-indigo-400 mb-6 flex items-center gap-2">
-        <span>📊</span> Indicadores Actuales del Mercado Bursátil
-      </h2>
+    <div className="mt-16 border-t border-slate-800 pt-10">
+      <div className="flex items-center gap-3 mb-8">
+        <div className="p-2 bg-indigo-500/10 rounded-lg">
+            <span className="text-2xl">📊</span>
+        </div>
+        <div>
+            <h2 className="text-2xl font-bold text-white">Resumen de Mercado</h2>
+            <p className="text-slate-500 text-sm">Instantánea de los indicadores clave y su interpretación.</p>
+        </div>
+      </div>
       
-      <div className="overflow-x-auto mb-12 rounded-xl border border-slate-700 shadow-xl bg-surface">
-        <table className="w-full text-left text-sm">
-          <thead className="bg-slate-800 text-slate-200 uppercase tracking-wider font-bold">
+      <div className="overflow-hidden rounded-xl border border-slate-700 shadow-2xl bg-surface mb-12">
+        <table className="w-full text-left text-sm border-collapse">
+          <thead className="bg-slate-900 text-slate-400 uppercase tracking-wider font-semibold text-xs">
             <tr>
-              <th className="p-4 border-b border-slate-600">Indicador</th>
-              <th className="p-4 border-b border-slate-600">Tipo</th>
-              <th className="p-4 border-b border-slate-600">Valor Actual (Aprox.)</th>
-              <th className="p-4 border-b border-slate-600">Rango/Media</th>
-              <th className="p-4 border-b border-slate-600">Implicación</th>
+              <th className="p-4 border-b border-slate-700">Indicador</th>
+              <th className="p-4 border-b border-slate-700 hidden sm:table-cell">Tipo</th>
+              <th className="p-4 border-b border-slate-700">Valor (Aprox.)</th>
+              <th className="p-4 border-b border-slate-700 hidden md:table-cell">Rango Histórico</th>
+              <th className="p-4 border-b border-slate-700">Implicación</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-700 bg-slate-900/50 text-slate-300">
-            <tr className="hover:bg-slate-800/50 transition-colors">
+          <tbody className="divide-y divide-slate-800 text-slate-300">
+            {/* VIX */}
+            <tr className="hover:bg-slate-800/60 transition-colors bg-slate-900/20">
               <td className="p-4 font-medium text-white">VIX (Volatilidad)</td>
-              <td className="p-4 text-slate-400">Sentimiento</td>
-              <td className="p-4">∼16.30</td>
-              <td className="p-4">Media: ∼19.4</td>
-              <td className="p-4 text-green-400">Neutral/Calma: Volatilidad esperada baja, complacencia.</td>
+              <td className="p-4 text-slate-500 hidden sm:table-cell">Sentimiento</td>
+              <td className="p-4 font-mono text-emerald-400">∼15.50</td>
+              <td className="p-4 text-slate-500 hidden md:table-cell">Media: ∼19.4</td>
+              <td className="p-4"><span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-emerald-400/10 text-emerald-400">Calma / Complacencia</span></td>
             </tr>
-            <tr className="hover:bg-slate-800/50 transition-colors">
+            {/* Fear & Greed */}
+            <tr className="hover:bg-slate-800/60 transition-colors">
               <td className="p-4 font-medium text-white">Fear & Greed Index</td>
-              <td className="p-4 text-slate-400">Sentimiento</td>
-              <td className="p-4">∼50 (Neutral)</td>
-              <td className="p-4">0 (Miedo) - 100 (Codicia)</td>
-              <td className="p-4 text-yellow-400">Neutral: Sin emoción fuerte actual.</td>
+              <td className="p-4 text-slate-500 hidden sm:table-cell">Sentimiento</td>
+              <td className="p-4 font-mono text-yellow-400">∼48</td>
+              <td className="p-4 text-slate-500 hidden md:table-cell">0 (Miedo) - 100 (Codicia)</td>
+              <td className="p-4"><span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-400/10 text-yellow-400">Neutral</span></td>
             </tr>
-            <tr className="hover:bg-slate-800/50 transition-colors">
+            {/* Buffett */}
+            <tr className="hover:bg-slate-800/60 transition-colors bg-slate-900/20">
               <td className="p-4 font-medium text-white">Buffett Indicator</td>
-              <td className="p-4 text-slate-400">Valoración</td>
-              <td className="p-4 text-red-400 font-bold">∼220%</td>
-              <td className="p-4">Media: ∼85%-100%</td>
-              <td className="p-4 text-red-400">Bajista (Extremo): Acciones muy caras vs PIB.</td>
+              <td className="p-4 text-slate-500 hidden sm:table-cell">Valoración</td>
+              <td className="p-4 font-mono text-red-400 font-bold">∼198%</td>
+              <td className="p-4 text-slate-500 hidden md:table-cell">Media: ∼100%</td>
+              <td className="p-4"><span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-400/10 text-red-400">Sobrevaloración Extrema</span></td>
             </tr>
-            <tr className="hover:bg-slate-800/50 transition-colors">
+            {/* P/E */}
+            <tr className="hover:bg-slate-800/60 transition-colors">
               <td className="p-4 font-medium text-white">P/E Ratio (S&P 500)</td>
-              <td className="p-4 text-slate-400">Valoración</td>
-              <td className="p-4 text-red-400 font-bold">∼28 - 30</td>
-              <td className="p-4">Media Histórica: ∼16</td>
-              <td className="p-4 text-red-400">Bajista: Mercado caro, se paga mucho por beneficios.</td>
+              <td className="p-4 text-slate-500 hidden sm:table-cell">Valoración</td>
+              <td className="p-4 font-mono text-red-400 font-bold">∼28.5</td>
+              <td className="p-4 text-slate-500 hidden md:table-cell">Media: ∼16.0</td>
+              <td className="p-4"><span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-400/10 text-red-400">Mercado Caro</span></td>
             </tr>
-            <tr className="hover:bg-slate-800/50 transition-colors">
-              <td className="p-4 font-medium text-white">Curva Rendimiento</td>
-              <td className="p-4 text-slate-400">Macro</td>
-              <td className="p-4 text-red-400 font-bold">Invertida (-0.27%)</td>
-              <td className="p-4">Positiva ({'>'} 0)</td>
-              <td className="p-4 text-red-400">Recesión: Predictor fiable de crisis futura.</td>
+            {/* Curva */}
+            <tr className="hover:bg-slate-800/60 transition-colors bg-slate-900/20">
+              <td className="p-4 font-medium text-white">Curva (10Y-2Y)</td>
+              <td className="p-4 text-slate-500 hidden sm:table-cell">Macro</td>
+              <td className="p-4 font-mono text-emerald-400 font-bold">+0.15%</td>
+              <td className="p-4 text-slate-500 hidden md:table-cell">Positiva ({'>'} 0)</td>
+              <td className="p-4"><span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-emerald-400/10 text-emerald-400">Normalizándose (Post-inversión)</span></td>
             </tr>
-            <tr className="hover:bg-slate-800/50 transition-colors">
+            {/* Bono 10Y */}
+            <tr className="hover:bg-slate-800/60 transition-colors">
               <td className="p-4 font-medium text-white">Bono 10Y</td>
-              <td className="p-4 text-slate-400">Macro</td>
-              <td className="p-4">∼4.14%</td>
-              <td className="p-4">Variable (3.8 - 4.8%)</td>
-              <td className="p-4 text-yellow-400">Incierto: Niveles manejables, peligroso si sube rápido.</td>
+              <td className="p-4 text-slate-500 hidden sm:table-cell">Macro</td>
+              <td className="p-4 font-mono text-yellow-400">∼4.45%</td>
+              <td className="p-4 text-slate-500 hidden md:table-cell">Rango: 3.5 - 5.0%</td>
+              <td className="p-4"><span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-400/10 text-yellow-400">Presión sobre acciones</span></td>
             </tr>
-            <tr className="hover:bg-slate-800/50 transition-colors">
+            {/* Petróleo */}
+            <tr className="hover:bg-slate-800/60 transition-colors bg-slate-900/20">
               <td className="p-4 font-medium text-white">Petróleo (WTI)</td>
-              <td className="p-4 text-slate-400">Macro</td>
-              <td className="p-4">∼59.00 USD</td>
-              <td className="p-4">Variable</td>
-              <td className="p-4 text-blue-400">Neutro: Baja presión inflacionaria.</td>
-            </tr>
-            <tr className="hover:bg-slate-800/50 transition-colors">
-              <td className="p-4 font-medium text-white">ISM Manufacturero</td>
-              <td className="p-4 text-slate-400">Macro</td>
-              <td className="p-4 text-orange-400">∼48.2</td>
-              <td className="p-4">Umbral: 50</td>
-              <td className="p-4 text-orange-400">Desaceleración: Contracción industrial.</td>
+              <td className="p-4 text-slate-500 hidden sm:table-cell">Macro</td>
+              <td className="p-4 font-mono text-blue-400">∼68.50 $</td>
+              <td className="p-4 text-slate-500 hidden md:table-cell">Rango: 60 - 90 $</td>
+              <td className="p-4"><span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-400/10 text-blue-400">Sin presión inflacionaria</span></td>
             </tr>
           </tbody>
         </table>
-        <div className="p-2 bg-slate-800 text-xs text-slate-500 text-right">Nota: Valores aproximados a Dic 2025.</div>
       </div>
 
-      <h3 className="text-xl font-bold text-indigo-400 mb-4 flex items-center gap-2">
-        <span>🧐</span> Análisis Conclusivo de la Tensión
-      </h3>
-      <div className="prose prose-invert max-w-none text-slate-300 mb-12 bg-slate-800/30 p-6 rounded-xl border border-slate-700">
-        <p className="mb-4">
-          Existe una clara <strong>tensión en el mercado</strong>. Por un lado, los indicadores de Sentimiento (VIX, Fear & Greed) apuntan a una 
-          <span className="text-green-400 font-semibold"> calma o neutralidad</span>, sugiriendo que los inversores no anticipan caídas inminentes. 
-          Sin embargo, esta complacencia técnica contrasta drásticamente con los fundamentales.
-        </p>
-        <p className="mb-4">
-          Los indicadores de Valoración (Buffett Indicator, P/E) y Macro (Curva Invertida, ISM) gritan 
-          <span className="text-red-400 font-semibold"> advertencia</span>. El mercado está históricamente caro en un entorno de desaceleración económica subyacente.
-        </p>
-        <p className="font-semibold border-l-4 border-indigo-500 pl-4 text-white">
-          Conclusión: El mercado vive una divergencia. Los precios suben por inercia y sentimiento, mientras la economía real y las valoraciones sugieren cautela extrema. 
-          Cualquier sorpresa negativa podría provocar una corrección rápida para alinear la realidad con el precio.
-        </p>
-      </div>
-
-      <h3 className="text-xl font-bold text-indigo-400 mb-6 flex items-center gap-2">
-        <span>🔗</span> Correlación y Causalidad
-      </h3>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
-        {/* Correlación */}
-        <div className="bg-surface rounded-xl border border-slate-700 shadow-lg overflow-hidden">
-          <div className="bg-slate-800 p-3 font-bold text-slate-200 border-b border-slate-600">Correlación (Se mueven juntos)</div>
-          <table className="w-full text-sm text-left">
-            <tbody className="divide-y divide-slate-700 text-slate-300">
-              <tr>
-                <td className="p-3 font-medium text-indigo-300">VIX vs S&P 500</td>
-                <td className="p-3 text-slate-400">Negativa Fuerte. Si S&P cae, VIX sube (miedo).</td>
-              </tr>
-              <tr>
-                <td className="p-3 font-medium text-indigo-300">Tasa 10Y vs ISM</td>
-                <td className="p-3 text-slate-400">Positiva. Economía fuerte sube tasas.</td>
-              </tr>
-              <tr>
-                <td className="p-3 font-medium text-indigo-300">Valoración vs Curva</td>
-                <td className="p-3 text-slate-400">Negativa. Sobrevaloración precede inversión de curva.</td>
-              </tr>
-              <tr>
-                <td className="p-3 font-medium text-indigo-300">Petróleo vs Tasa 10Y</td>
-                <td className="p-3 text-slate-400">Positiva. Petróleo alto impulsa inflación y tasas.</td>
-              </tr>
-            </tbody>
-          </table>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-16">
+        {/* Análisis Texto */}
+        <div className="bg-slate-800/30 p-6 rounded-xl border border-slate-700">
+            <h3 className="text-lg font-bold text-indigo-400 mb-4 flex items-center gap-2">
+                <span>🧐</span> Diagnóstico de Mercado
+            </h3>
+            <div className="space-y-4 text-slate-300 text-sm leading-relaxed">
+                <p>
+                  El mercado actual muestra una <strong className="text-white">divergencia significativa</strong>. 
+                  Por un lado, los indicadores de sentimiento como el VIX están en niveles bajos, indicando que los inversores 
+                  se sienten seguros y "complacientes".
+                </p>
+                <p>
+                  Sin embargo, las valoraciones (P/E, Buffett Indicator) están en máximos históricos, lo que significa que 
+                  se está pagando un precio muy alto por los beneficios futuros. Esto reduce el margen de seguridad.
+                </p>
+                <div className="p-3 bg-indigo-500/10 border-l-2 border-indigo-500 rounded-r text-indigo-200">
+                    <strong>Conclusión:</strong> Entorno de "Ricitos de Oro" (ni muy frío ni muy caliente) sostenido por el optimismo, 
+                    pero vulnerable a cualquier shock inflacionario o de crecimiento debido a las altas valoraciones.
+                </div>
+            </div>
         </div>
 
-        {/* Causalidad */}
-        <div className="bg-surface rounded-xl border border-slate-700 shadow-lg overflow-hidden">
-          <div className="bg-slate-800 p-3 font-bold text-slate-200 border-b border-slate-600">Causalidad (Predictivo)</div>
-          <table className="w-full text-sm text-left">
-            <tbody className="divide-y divide-slate-700 text-slate-300">
-              <tr>
-                <td className="p-3 font-medium text-purple-300">Curva Invertida</td>
-                <td className="p-3 text-slate-400">Predice <strong>Recesión</strong> (6-18 meses).</td>
-              </tr>
-              <tr>
-                <td className="p-3 font-medium text-purple-300">Valoración Alta</td>
-                <td className="p-3 text-slate-400">Predice <strong>Bajos Retornos</strong> a largo plazo.</td>
-              </tr>
-              <tr>
-                <td className="p-3 font-medium text-purple-300">ISM {'<'} 50</td>
-                <td className="p-3 text-slate-400">Causa <strong>Menores Beneficios</strong> empresariales.</td>
-              </tr>
-              <tr>
-                <td className="p-3 font-medium text-purple-300">VIX Extremo</td>
-                <td className="p-3 text-slate-400">Señal contraria de <strong>Rebote/Compra</strong>.</td>
-              </tr>
-            </tbody>
-          </table>
+        {/* Tablas Pequeñas */}
+        <div className="space-y-6">
+            <div className="bg-surface rounded-xl border border-slate-700 shadow-sm overflow-hidden">
+                <div className="bg-slate-800 px-4 py-2 font-bold text-slate-200 text-xs uppercase tracking-wide">Correlaciones Clave</div>
+                <table className="w-full text-xs text-left">
+                    <tbody className="divide-y divide-slate-700 text-slate-300">
+                    <tr><td className="p-3">📉 Si <strong>S&P 500</strong> cae...</td><td className="p-3 text-right">📈 <strong>VIX</strong> sube (Miedo)</td></tr>
+                    <tr><td className="p-3">📈 Si <strong>Petróleo</strong> sube...</td><td className="p-3 text-right">📈 <strong>Bonos</strong> suben (Inflación)</td></tr>
+                    </tbody>
+                </table>
+            </div>
+            
+            <div className="bg-surface rounded-xl border border-slate-700 shadow-sm overflow-hidden">
+                <div className="bg-slate-800 px-4 py-2 font-bold text-slate-200 text-xs uppercase tracking-wide">Señales Predictivas</div>
+                <table className="w-full text-xs text-left">
+                    <tbody className="divide-y divide-slate-700 text-slate-300">
+                    <tr><td className="p-3">🔮 <strong>Curva Invertida</strong></td><td className="p-3 text-right text-slate-400">Predice Recesión</td></tr>
+                    <tr><td className="p-3">🔮 <strong>Valoración Alta</strong></td><td className="p-3 text-right text-slate-400">Predice Bajos Retornos</td></tr>
+                    </tbody>
+                </table>
+            </div>
         </div>
       </div>
     </div>

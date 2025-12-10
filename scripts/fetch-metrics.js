@@ -3,34 +3,25 @@
  * scripts/fetch-metrics.js
  * 
  * Este script se ejecuta en Node.js (GitHub Actions).
- * Obtiene datos reales de Yahoo Finance y genera public/data/metrics.json
+ * Obtiene datos reales de Yahoo Finance usando fetch nativo para máxima compatibilidad.
  */
 
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-// CORRECCIÓN CRÍTICA: Importación nombrada para instanciar la clase
-import { YahooFinance } from 'yahoo-finance2';
-
-// Instancia explícita requerida por la versión v2.8+/v3
-const yf = new YahooFinance({
-  header: {
-    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
-  }
-});
 
 // Configuración para __dirname en ESM
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Mapa de IDs internos a Tickers de Yahoo
+// Mapa de IDs a Tickers de Yahoo
 // NULL = Usar Override Manual (Indicadores macroeconómicos sin ticker fiable en Yahoo)
 const TICKER_MAP = {
   'yield_curve': '^T10Y2Y',
   'ism_pmi': null, 
-  'fed_funds': '^IRX', 
-  'credit_spreads': 'HYG', 
-  'm2_growth': 'M2SL', 
+  'fed_funds': '^IRX', // Usamos 13-week treasury bill como proxy cercano si no hay direct
+  'credit_spreads': 'HYG', // High Yield Bond ETF como proxy inverso de spread
+  'm2_growth': null, 
   'unemployment': null,
   'lei': null, 
   'nfp': null,
@@ -51,7 +42,8 @@ const TICKER_MAP = {
   'copper_gold': 'CALCULATED_COPPER_GOLD'
 };
 
-// Datos Macroeconómicos Manuales (Actualizados Enero 2025)
+// Datos Macroeconómicos Manuales (Consenso Enero 2025)
+// Se usan cuando Yahoo no tiene un ticker directo fiable para el dato económico exacto
 const MANUAL_OVERRIDES = {
   'ism_pmi': { price: 48.4, change: 0.2 },
   'unemployment': { price: 4.2, change: 0.0 },
@@ -66,40 +58,66 @@ const MANUAL_OVERRIDES = {
   'bond_vs_stock': { price: 0.85, change: 0.05 },
   'buffett': { price: 198, change: 0.5 },
   'cape': { price: 36.2, change: 0.1 },
-  // Fallbacks si Yahoo falla
+  // Fallbacks de seguridad si el fetch falla
   'yield_curve': { price: 0.15, change: 0.02 },
   'fed_funds': { price: 4.35, change: 0 },
   'vix': { price: 15.5, change: 0.5 },
   'oil_wti': { price: 68.5, change: -1.2 },
   'dxy': { price: 101.5, change: 0.3 },
-  '10y_yield': { price: 4.45, change: 0.05 }
+  '10y_yield': { price: 4.45, change: 0.05 },
+  'credit_spreads': { price: 3.20, change: -0.05 }
 };
 
-// Fallback: Fetch directo a API de Yahoo si la librería falla
+// Función robusta para obtener datos de Yahoo simulando un navegador
 async function fetchRawYahooData(ticker) {
   try {
-    const url = `https://query1.finance.yahoo.com/v8/finance/chart/${ticker}?interval=1d&range=1mo`;
-    const res = await fetch(url, {
-      headers: { 'User-Agent': 'Mozilla/5.0' }
-    });
-    if (!res.ok) return null;
-    const json = await res.json();
-    const result = json.chart.result[0];
+    // Usamos rangos largos para tener historial suficiente
+    const url = `https://query1.finance.yahoo.com/v8/finance/chart/${ticker}?interval=1d&range=3mo`;
     
-    const price = result.meta.regularMarketPrice;
-    const prevClose = result.meta.chartPreviousClose;
+    const response = await fetch(url, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+      }
+    });
+
+    if (!response.ok) {
+        console.warn(`HTTP Error ${response.status} for ${ticker}`);
+        return null;
+    }
+    
+    const json = await response.json();
+    const result = json.chart?.result?.[0];
+    
+    if (!result) return null;
+    
+    const meta = result.meta;
+    const price = meta.regularMarketPrice;
+    const prevClose = meta.chartPreviousClose;
     const change = ((price - prevClose) / prevClose) * 100;
     
-    // Extraer historial
+    // Procesar Historial
     const timestamps = result.timestamp || [];
     const closes = result.indicators.quote[0].close || [];
-    const history = timestamps.map((t, i) => ({
-      date: new Date(t * 1000).toISOString().split('T')[0],
-      value: closes[i]
-    })).filter(h => h.value !== null).reverse().slice(0, 14);
+    
+    const history = [];
+    for (let i = 0; i < timestamps.length; i++) {
+        if (closes[i] !== null && closes[i] !== undefined) {
+            history.push({
+                date: new Date(timestamps[i] * 1000).toISOString().split('T')[0],
+                value: closes[i]
+            });
+        }
+    }
+    
+    // Tomamos los últimos 90 días o lo que haya
+    return { 
+        price, 
+        change, 
+        history: history.reverse() 
+    };
 
-    return { price, change, history };
   } catch (e) {
+    console.warn(`Excepción fetching ${ticker}:`, e.message);
     return null;
   }
 }
@@ -107,125 +125,105 @@ async function fetchRawYahooData(ticker) {
 async function fetchMetrics() {
   const results = {};
   const now = new Date().toISOString();
-  console.log("Iniciando extracción de datos (Yahoo Finance Class Instantiated)...");
+  console.log("Iniciando extracción de datos (Native Fetch Mode)...");
 
-  // 1. Pre-fetch commodities para ratio
-  let copperPrice = 0;
-  let goldPrice = 0;
+  // 1. Obtener Commodities para ratio Cobre/Oro
+  let copper = null;
+  let gold = null;
+  
+  console.log("Fetching Commodities...");
+  const cData = await fetchRawYahooData('HG=F');
+  const gData = await fetchRawYahooData('GC=F');
+  
+  if (cData) copper = cData.price;
+  if (gData) gold = gData.price;
 
-  try {
-    const copper = await yf.quote('HG=F');
-    const gold = await yf.quote('GC=F');
-    copperPrice = copper.regularMarketPrice;
-    goldPrice = gold.regularMarketPrice;
-  } catch (e) {
-    console.warn("⚠️ Fallo librería commodities, intentando raw fetch...");
-    const cRaw = await fetchRawYahooData('HG=F');
-    const gRaw = await fetchRawYahooData('GC=F');
-    if (cRaw) copperPrice = cRaw.price;
-    if (gRaw) goldPrice = gRaw.price;
-  }
-
-  // 2. Bucle Principal
+  // 2. Procesar cada métrica
   for (const [id, ticker] of Object.entries(TICKER_MAP)) {
-    // A. RATIOS CALCULADOS
+    process.stdout.write(`Procesando ${id}... `);
+
+    // CASO A: Ratio Cobre/Oro Calculado
     if (id === 'copper_gold') {
-      if (copperPrice && goldPrice > 0) {
-        const ratio = copperPrice / goldPrice;
-        results[id] = {
-          price: ratio,
-          changePercent: 0,
-          history: generateMockHistory(ratio),
-          lastUpdated: now
-        };
-        console.log(`✓ Calculado ${id}: ${ratio.toFixed(5)}`);
-      } else {
-        const fallback = 0.17;
-        results[id] = { price: fallback, changePercent: 0, history: generateMockHistory(fallback), lastUpdated: now };
-        console.log(`⚠ Fallback ${id} (Missing data)`);
-      }
-      continue;
+        if (copper && gold) {
+            const ratio = copper / gold;
+            results[id] = {
+                price: ratio,
+                changePercent: 0, // Difícil de calcular exacto sin historial sincronizado
+                history: generateMockHistory(ratio),
+                lastUpdated: now
+            };
+            console.log(`✅ Calculado: ${ratio.toFixed(4)}`);
+        } else {
+            console.log(`⚠️ Fallo (Faltan datos), usando fallback.`);
+            results[id] = { 
+                price: 0.17, 
+                changePercent: 0, 
+                history: generateMockHistory(0.17), 
+                lastUpdated: now 
+            };
+        }
+        continue;
     }
 
-    // B. OVERRIDES MANUALES
+    // CASO B: Indicador Económico Manual (Sin Ticker)
     if (!ticker) {
-      if (MANUAL_OVERRIDES[id]) {
+        const override = MANUAL_OVERRIDES[id];
         results[id] = {
-          price: MANUAL_OVERRIDES[id].price,
-          changePercent: MANUAL_OVERRIDES[id].change,
-          history: generateMockHistory(MANUAL_OVERRIDES[id].price),
-          lastUpdated: now
+            price: override.price,
+            changePercent: override.change,
+            history: generateMockHistory(override.price),
+            lastUpdated: now
         };
-        console.log(`✓ Manual ${id}: ${MANUAL_OVERRIDES[id].price}`);
-      }
-      continue;
+        console.log(`✅ Manual: ${override.price}`);
+        continue;
     }
 
-    // C. FETCH YAHOO
-    try {
-      // Intentar librería
-      let price, change, historyData = [];
-      
-      try {
-        const quote = await yf.quote(ticker);
-        price = quote.regularMarketPrice;
-        change = quote.regularMarketChangePercent || 0;
-        
-        // Historial
-        const historical = await yf.historical(ticker, { period1: '1mo', interval: '1d' });
-        historyData = historical.map(row => ({
-           date: row.date.toISOString().split('T')[0],
-           value: row.close
-        })).reverse();
-      } catch (libErr) {
-        // Intentar Raw Fetch si falla librería
-        console.warn(`  ↳ Librería falló para ${ticker}, intentando fetch directo...`);
-        const raw = await fetchRawYahooData(ticker);
-        if (!raw) throw new Error("Raw fetch failed");
-        price = raw.price;
-        change = raw.change;
-        historyData = raw.history;
-      }
+    // CASO C: Ticker de Mercado (Yahoo)
+    const data = await fetchRawYahooData(ticker);
+    
+    if (data) {
+        let { price, change, history } = data;
 
-      // Ajustes de escala (Bonos suelen venir x10)
-      if (['^TNX', '^IRX', '^T10Y2Y'].includes(ticker) && price > 20) {
-         price = price / 10;
-         historyData = historyData.map(h => ({ ...h, value: h.value / 10 }));
-      }
+        // Ajustes de escala específicos
+        // Bonos (TNX, IRX) vienen como índice (44.5) que significa 4.45%
+        if (['^TNX', '^IRX', '^T10Y2Y'].includes(ticker)) {
+            price = price / 10;
+            history = history.map(h => ({ ...h, value: h.value / 10 }));
+        }
 
-      results[id] = {
-        price: price,
-        changePercent: change,
-        history: historyData,
-        lastUpdated: now
-      };
-      console.log(`✓ Obtenido ${id} (${ticker}): ${price.toFixed(2)}`);
-
-    } catch (err) {
-      console.error(`✗ Error total ${id}: ${err.message}`);
-      // Fallback final
-      const fallback = MANUAL_OVERRIDES[id] || { price: 100, change: 0 };
-      results[id] = {
-          price: fallback.price,
-          changePercent: fallback.change,
-          history: generateMockHistory(fallback.price),
-          lastUpdated: now
-      };
+        results[id] = {
+            price,
+            changePercent: change,
+            history,
+            lastUpdated: now
+        };
+        console.log(`✅ Yahoo: ${price.toFixed(2)}`);
+    } else {
+        // Fallback si Yahoo falla
+        console.log(`❌ Fallo Yahoo. Usando Override.`);
+        const fallback = MANUAL_OVERRIDES[id] || { price: 100, change: 0 };
+        results[id] = {
+            price: fallback.price,
+            changePercent: fallback.change,
+            history: generateMockHistory(fallback.price),
+            lastUpdated: now
+        };
     }
   }
 
-  // Guardar archivo
+  // Guardar JSON
   const outputDir = path.join(__dirname, '../public/data');
   if (!fs.existsSync(outputDir)) fs.mkdirSync(outputDir, { recursive: true });
   
   const output = { lastUpdated: now, metrics: results };
   fs.writeFileSync(path.join(outputDir, 'metrics.json'), JSON.stringify(output, null, 2));
   console.log("---------------------------------------------------");
-  console.log("✅ Datos guardados exitosamente.");
+  console.log("✅ Datos guardados en public/data/metrics.json");
 }
 
 function generateMockHistory(basePrice) {
-  return Array(14).fill(0).map((_, i) => ({
+  // Genera una línea ligeramente ruidosa para visualización
+  return Array(30).fill(0).map((_, i) => ({
     date: new Date(Date.now() - i * 86400000).toISOString().split('T')[0],
     value: basePrice * (1 + (Math.random() * 0.02 - 0.01))
   })).reverse();
