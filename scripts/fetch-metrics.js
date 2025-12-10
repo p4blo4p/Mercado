@@ -5,11 +5,11 @@
  * ARQUITECTURA MULTI-FUENTE (5 NIVELES)
  * Estrategia de respaldo en cascada para evitar errores 429/404.
  * 
- * Nivel 1: Yahoo Finance API (JSON)
- * Nivel 2: TradingView Scanner API (POST JSON)
- * Nivel 3: Stooq (CSV Download)
- * Nivel 4: MarketWatch (HTML Scraping)
- * Nivel 5: CNBC (HTML Scraping)
+ * Nivel 1: Yahoo Finance API (JSON) - Primaria
+ * Nivel 2: TradingView Scanner API (POST JSON) - Muy robusta
+ * Nivel 3: Stooq (CSV Download) - Respaldo clásico
+ * Nivel 4: MarketWatch (HTML Scraping) - Respaldo web
+ * Nivel 5: CNBC (HTML Scraping) - Último recurso
  */
 
 import fs from 'fs';
@@ -21,59 +21,50 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // --- CONFIGURACIÓN DE TICKERS POR FUENTE ---
-// Cada métrica tiene su ID y el símbolo correspondiente en cada proveedor.
 const METRIC_CONFIG = {
-    // Market
-    'sp500_ma200': { 
-        yahoo: '^GSPC', tv: 'SP:SPX', stooq: '^SPX', mw: 'index/spx', cnbc: '.SPX' 
-    },
-    '10y_yield': { 
-        yahoo: '^TNX', tv: 'TVC:US10Y', stooq: '10USY.B', mw: 'bond/tmubmusd10y', cnbc: 'US10Y' 
-    },
-    'vix': { 
-        yahoo: '^VIX', tv: 'CBOE:VIX', stooq: '^VIX', mw: 'index/vix', cnbc: '.VIX' 
-    },
-    'dxy': { 
-        yahoo: 'DX-Y.NYB', tv: 'ICE:DX1!', stooq: null, mw: 'index/dxy', cnbc: '.DXY' 
-    },
-    'oil_wti': { 
-        yahoo: 'CL=F', tv: 'NYMEX:CL1!', stooq: 'CL.F', mw: 'future/crude%20oil%20-%20electronic', cnbc: '@CL.1' 
-    },
-    // Commodities for Ratio
-    'copper': { yahoo: 'HG=F', tv: 'COMEX:HG1!', stooq: 'HG.F' },
-    'gold': { yahoo: 'GC=F', tv: 'COMEX:GC1!', stooq: 'GC.F' },
+    // Market Data
+    'sp500_ma200': { yahoo: '^GSPC', tv: 'SP:SPX', stooq: '^SPX', mw: 'index/spx', cnbc: '.SPX' },
+    '10y_yield':   { yahoo: '^TNX', tv: 'TVC:US10Y', stooq: '10USY.B', mw: 'bond/tmubmusd10y', cnbc: 'US10Y' },
+    'vix':         { yahoo: '^VIX', tv: 'CBOE:VIX', stooq: '^VIX', mw: 'index/vix', cnbc: '.VIX' },
+    'dxy':         { yahoo: 'DX-Y.NYB', tv: 'ICE:DX1!', stooq: null, mw: 'index/dxy', cnbc: '.DXY' },
+    'oil_wti':     { yahoo: 'CL=F', tv: 'NYMEX:CL1!', stooq: 'CL.F', mw: 'future/crude%20oil%20-%20electronic', cnbc: '@CL.1' },
+    
+    // Commodities (Ratio)
+    'copper':      { yahoo: 'HG=F', tv: 'COMEX:HG1!', stooq: 'HG.F' },
+    'gold':        { yahoo: 'GC=F', tv: 'COMEX:GC1!', stooq: 'GC.F' },
+
+    // Economic Data (Attempts to fetch via Yahoo/TV tickers where available)
+    'credit_spreads': { yahoo: 'HYG', tv: 'AMEX:HYG' }, // High Yield Bond ETF as proxy
+    'bond_vs_stock':  { yahoo: null }, // Calculated
 };
 
-// --- DATOS MANUALES (Respaldo Final y Datos Macro Mensuales) ---
+// --- DATOS MANUALES (Respaldo Final para Datos Macro Mensuales) ---
 // Actualizado: FEBRERO 2025
 const MANUAL_OVERRIDES = {
     'yield_curve': { price: 0.16, change: 0.02, trend: 'up' }, 
     'ism_pmi': { price: 49.1, change: 0.7, trend: 'up' }, 
     'fed_funds': { price: 4.50, change: 0.0, trend: 'flat' },
-    'credit_spreads': { price: 3.05, change: 0.10, trend: 'up' },
-    'unemployment': { price: 4.2, change: 0.0, trend: 'flat' }, 
-    'cpi': { price: 2.6, change: -0.1, trend: 'down' }, 
     'm2_growth': { price: 1.9, change: 0.1, trend: 'up' },
+    'unemployment': { price: 4.2, change: 0.0, trend: 'flat' }, 
     'lei': { price: 99.1, change: -0.3, trend: 'down' },
     'nfp': { price: 155, change: 13, trend: 'up' },
+    'cpi': { price: 2.6, change: -0.1, trend: 'down' }, 
     'consumer_conf': { price: 109.5, change: 0.8, trend: 'up' },
-    'retail_sales': { price: 2.9, change: 0.1, trend: 'up' },
+    'buffett': { price: 199.2, change: 0.7, trend: 'up' }, 
+    'cape': { price: 36.5, change: 0.3, trend: 'up' },
     'sp500_margin': { price: 12.2, change: 0.1, trend: 'up' },
     'fear_greed': { price: 52, change: 4, trend: 'up' },
     'bond_vs_stock': { price: 0.90, change: 0.05, trend: 'up' },
-    'buffett': { price: 199.2, change: 0.7, trend: 'up' }, 
-    'cape': { price: 36.5, change: 0.3, trend: 'up' },
-    'put_call': { price: 0.89, change: -0.03, trend: 'down' }
+    'put_call': { price: 0.89, change: -0.03, trend: 'down' },
+    'retail_sales': { price: 2.9, change: 0.1, trend: 'up' }
 };
 
 // --- CLASE DATA FETCHER ---
 class DataFetcher {
     constructor() {
-        // Rotación de User-Agents para evitar bloqueos
         this.userAgents = [
             'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36',
-            'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-            'Mozilla/5.0 (X11; Linux x86_64; rv:109.0) Gecko/20100101 Firefox/115.0'
+            'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
         ];
     }
 
@@ -81,24 +72,23 @@ class DataFetcher {
         return this.userAgents[Math.floor(Math.random() * this.userAgents.length)];
     }
 
-    // Helper: Reconstruir historial visual cuando la fuente solo da precio actual
+    // Helper: Generar historial sintético cuando la fuente no da histórico
     generateSyntheticHistory(current, changePercent) {
         const history = [];
         const volatility = current * 0.008; // 0.8% volatilidad
         let pointer = current;
         
-        // Empezamos desde hoy hacia atrás 90 días
-        for (let i = 0; i < 90; i++) {
+        // Generar 1 Año (aprox 250 días de trading)
+        for (let i = 0; i < 250; i++) {
             history.push({
                 date: new Date(Date.now() - i * 86400000).toISOString().split('T')[0],
                 value: parseFloat(pointer.toFixed(2))
             });
             
-            // "Deshacer" el cambio diario para estimar el pasado
-            // Si la tendencia es positiva, restamos para ir al pasado
-            const dailyDrift = (changePercent / 100 / 10) * current; // Drift suave
+            // "Deshacer" el cambio para ir al pasado
+            // Asumimos un drift basado en el cambio diario actual
+            const dailyDrift = (changePercent / 100 / 5) * current; 
             const noise = (Math.random() - 0.5) * volatility;
-            
             pointer = pointer - dailyDrift + noise;
         }
         return history.reverse();
@@ -107,7 +97,7 @@ class DataFetcher {
     // Nivel 1: Yahoo Finance API
     async fetchYahoo(ticker) {
         if (!ticker) return null;
-        // Pedimos 1 año (1y) para tener mejores gráficas
+        // Range 1y para MM200
         const url = `https://query1.finance.yahoo.com/v8/finance/chart/${ticker}?interval=1d&range=1y`;
         try {
             const res = await fetch(url, { headers: { 'User-Agent': this.getUA() } });
@@ -134,31 +124,21 @@ class DataFetcher {
             const prevClose = meta.chartPreviousClose;
             const changeP = ((currentPrice - prevClose) / prevClose) * 100;
 
-            return {
-                source: 'Yahoo',
-                price: currentPrice,
-                changePercent: changeP,
-                history: history
-            };
-        } catch (e) {
-            // console.warn(`   [Yahoo] Falló para ${ticker}: ${e.message}`);
-            return null;
-        }
+            return { source: 'Yahoo', price: currentPrice, changePercent: changeP, history: history };
+        } catch (e) { return null; }
     }
 
-    // Nivel 2: TradingView Scanner API (Muy robusta)
+    // Nivel 2: TradingView Scanner API
     async fetchTradingView(tvTicker) {
         if (!tvTicker) return null;
-        // Parse ticker "EXCHANGE:SYMBOL"
         const url = 'https://scanner.tradingview.com/america/scan';
-        
         try {
             const res = await fetch(url, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     symbols: { tickers: [tvTicker], query: { types: [] } },
-                    columns: ["close", "change|5", "change|1", "Rec.Log|5", "name"]
+                    columns: ["close", "change|5", "change|1"]
                 })
             });
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -166,18 +146,16 @@ class DataFetcher {
             const d = json.data?.[0]?.d;
             if (!d) throw new Error('No data');
 
-            const price = d[0]; // Close price
-            const changePercent = d[2]; // 1 Day change % (Approx)
+            const price = d[0];
+            const changePercent = d[2];
 
             return {
                 source: 'TradingView',
                 price: price,
                 changePercent: changePercent,
-                history: this.generateSyntheticHistory(price, changePercent) // TV Scanner doesn't give history, we simulate it based on trend
+                history: this.generateSyntheticHistory(price, changePercent)
             };
-        } catch (e) {
-            return null;
-        }
+        } catch (e) { return null; }
     }
 
     // Nivel 3: Stooq (CSV)
@@ -188,17 +166,14 @@ class DataFetcher {
             const res = await fetch(url, { headers: { 'User-Agent': this.getUA() } });
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
             const text = await res.text();
-            // Parse CSV: Symbol,Date,Time,Open,High,Low,Close
             const lines = text.trim().split('\n');
             if (lines.length < 2) throw new Error('CSV empty');
             
             const values = lines[1].split(',');
             const close = parseFloat(values[6]);
             const open = parseFloat(values[3]);
-            
-            if (isNaN(close)) throw new Error('NaN value');
+            if (isNaN(close)) throw new Error('NaN');
 
-            // Stooq csv doesn't always give change %, calculate vs Open as approx
             const changePercent = ((close - open) / open) * 100;
 
             return {
@@ -207,20 +182,16 @@ class DataFetcher {
                 changePercent: changePercent,
                 history: this.generateSyntheticHistory(close, changePercent)
             };
-        } catch (e) {
-            return null;
-        }
+        } catch (e) { return null; }
     }
 
-    // Nivel 4: MarketWatch Scraping (Regex simple)
+    // Nivel 4: MarketWatch Scraping
     async fetchMarketWatch(slug) {
         if (!slug) return null;
         const url = `https://www.marketwatch.com/investing/${slug}`;
         try {
             const res = await fetch(url, { headers: { 'User-Agent': this.getUA() } });
             const html = await res.text();
-            
-            // Regex para buscar metadatos
             const priceMatch = html.match(/<meta name="price" content="([\d\.]+)"/);
             const changeMatch = html.match(/<meta name="priceChangePercent" content="([\d\.\-]+)%?"/);
 
@@ -235,9 +206,7 @@ class DataFetcher {
                 };
             }
             throw new Error('Regex failed');
-        } catch (e) {
-            return null;
-        }
+        } catch (e) { return null; }
     }
 }
 
@@ -248,64 +217,45 @@ async function run() {
     const results = {};
     const now = new Date().toISOString();
 
-    // Helper para obtener dato intentando todas las fuentes
     async function getData(id, config) {
-        // Estrategia en Cascada
         let data = null;
-        
-        // 1. Yahoo
-        if (!data && config?.yahoo) {
-            data = await fetcher.fetchYahoo(config.yahoo);
-        }
-        // 2. TradingView
-        if (!data && config?.tv) {
-            data = await fetcher.fetchTradingView(config.tv);
-        }
-        // 3. Stooq
-        if (!data && config?.stooq) {
-            data = await fetcher.fetchStooq(config.stooq);
-        }
-        // 4. MarketWatch
-        if (!data && config?.mw) {
-            data = await fetcher.fetchMarketWatch(config.mw);
-        }
+        // Cascada de intentos
+        if (!data && config?.yahoo) data = await fetcher.fetchYahoo(config.yahoo);
+        if (!data && config?.tv)    data = await fetcher.fetchTradingView(config.tv);
+        if (!data && config?.stooq) data = await fetcher.fetchStooq(config.stooq);
+        if (!data && config?.mw)    data = await fetcher.fetchMarketWatch(config.mw);
 
-        // Correcciones Específicas
         if (data) {
-            // Si es Bono (TNX), a veces viene como 42.0 en vez de 4.2
+            // Correcciones especiales
             if (id === '10y_yield' && data.price > 10) {
                 data.price = data.price / 10;
-                data.history = data.history.map(h => ({...h, value: h.value / 10}));
+                data.history.forEach(h => h.value = h.value / 10);
             }
-            // Normalizar decimales
             data.price = parseFloat(data.price.toFixed(4));
         }
-
         return data;
     }
 
-    // 1. Obtener Commodities para Ratio (Cobre/Oro)
+    // 1. Ratio Cobre/Oro
     const copperData = await getData('copper', METRIC_CONFIG['copper']);
     const goldData = await getData('gold', METRIC_CONFIG['gold']);
-    
-    // 2. Obtener Resto de Métricas
-    const metricsToProcess = [
+
+    // 2. Métricas
+    const allMetrics = [
         'yield_curve', 'ism_pmi', 'fed_funds', 'credit_spreads', 'm2_growth',
         'unemployment', 'lei', 'nfp', 'cpi', 'consumer_conf', 'buffett', 'cape',
         'bond_vs_stock', 'sp500_margin', 'vix', 'fear_greed', 'put_call',
         'sp500_ma200', '10y_yield', 'oil_wti', 'dxy', 'retail_sales'
     ];
 
-    for (const id of metricsToProcess) {
+    for (const id of allMetrics) {
         let result = null;
-        
-        // A. Intentar buscar en fuentes de mercado
         if (METRIC_CONFIG[id]) {
             result = await getData(id, METRIC_CONFIG[id]);
         }
 
-        // B. Si falló o no tiene config, usar Manual Override (Datos Macro)
         if (!result) {
+            // Fallback Manual si fallan todas las APIs o no hay config
             const manual = MANUAL_OVERRIDES[id];
             if (manual) {
                 console.log(`ℹ️ [Manual] ${id}: ${manual.price} (Fuente fiable no disponible)`);
@@ -320,7 +270,7 @@ async function run() {
                 result = { price: 0, changePercent: 0, history: [], source: 'Error' };
             }
         } else {
-            console.log(`✅ [${result.source}] ${id}: ${result.price.toFixed(2)}`);
+            console.log(`✅ [${result.source}] ${id}: ${result.price}`);
         }
 
         results[id] = {
@@ -331,15 +281,11 @@ async function run() {
         };
     }
 
-    // 3. Calcular Ratio Cobre/Oro Especial
+    // 3. Cálculo Cobre/Oro (Normalizado a Onzas)
     if (copperData && goldData) {
-        // Yahoo da Cobre en $/lb. Oro en $/oz.
-        // Convertir Cobre a $/oz: Price($/lb) * 14.5833
-        // Corrección: 1 Troy Ounce = 0.0685714 Pounds. Or 1 lb = 14.5833 Troy Oz.
-        // Price per pound / 14.5833 = Price per ounce
+        // Cobre en $/lb -> $/oz (1 lb = 14.5833 oz troy)
         const copperPerOz = copperData.price / 14.5833;
         const ratio = copperPerOz / goldData.price;
-        
         console.log(`✅ [Calculated] copper_gold: ${ratio.toFixed(6)}`);
         
         results['copper_gold'] = {
@@ -350,14 +296,10 @@ async function run() {
         };
     } else {
          results['copper_gold'] = {
-            price: 0.00008, 
-            changePercent: 0, 
-            history: fetcher.generateSyntheticHistory(0.00008, 0), 
-            lastUpdated: now 
+            price: 0.00008, changePercent: 0, history: [], lastUpdated: now 
         };
     }
 
-    // Guardar JSON
     const outputDir = path.join(__dirname, '../public/data');
     if (!fs.existsSync(outputDir)) fs.mkdirSync(outputDir, { recursive: true });
     
