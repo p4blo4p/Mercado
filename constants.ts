@@ -298,8 +298,8 @@ export const METRICS: MetricDefinition[] = [
     searchQuery: 'current S&P 500 price',
     description: 'Tendencia Alcista: Precio > MA200. Tendencia Bajista (Bear Market): Precio < MA200.',
     thresholds: {
-      goodLevel: 4200, goodDirection: 'above',
-      badLevel: 3800, badDirection: 'below'
+      goodLevel: 6000, goodDirection: 'above',
+      badLevel: 5500, badDirection: 'below'
     },
     urls: {
       [DataSource.GENERAL]: 'https://finance.yahoo.com/quote/%5EGSPC',

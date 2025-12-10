@@ -22,7 +22,8 @@ const MetricCard: React.FC<MetricCardProps> = ({ data }) => {
   const minValue = Math.min(...allValues);
   const maxValue = Math.max(...allValues);
   const range = maxValue - minValue;
-  const padding = range === 0 ? minValue * 0.05 : range * 0.1; 
+  // Increase padding to prevent flat lines
+  const padding = range === 0 ? minValue * 0.05 : range * 0.2; 
   const yDomain = [minValue - padding, maxValue + padding];
 
   // Helper for Favicon
@@ -41,9 +42,9 @@ const MetricCard: React.FC<MetricCardProps> = ({ data }) => {
 
   return (
     <div 
-      className="bg-surface rounded-xl border border-slate-700 shadow-lg hover:shadow-2xl hover:border-slate-500 transition-all duration-300 flex flex-col h-[340px] group relative"
+      className="bg-surface rounded-xl border border-slate-700 shadow-lg hover:shadow-2xl hover:border-slate-500 transition-all duration-300 flex flex-col h-[360px] group relative"
     >
-      {/* Header Section - No overflow hidden here to allow tooltip to pop out */}
+      {/* Header Section */}
       <div className="p-4 pb-2 flex flex-col justify-between items-start z-30 relative">
         <div className="w-full flex justify-between items-center pr-1">
            <div className="flex items-center gap-2 relative">
@@ -60,9 +61,9 @@ const MetricCard: React.FC<MetricCardProps> = ({ data }) => {
                  <path fillRule="evenodd" d="M18 10a8 8 0 1 1-16 0 8 8 0 0 1 16 0ZM9 5a5.5 5.5 0 1 0 0 11 5.5 5.5 0 0 0 0-11Zm.75 2.25a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0ZM9 8.75a.75.75 0 0 1 .75.75v3.5a.75.75 0 0 1-1.5 0v-3.5a.75.75 0 0 1 .75-.75Z" clipRule="evenodd" />
                </svg>
                
-               {/* Tooltip Popup - High Z-Index to overlap other cards */}
+               {/* Tooltip Popup - Z-Index 1000 to overlay header */}
                {data.definition.description && (
-                 <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 w-64 p-3 bg-slate-900/95 backdrop-blur-xl border border-slate-600 rounded-lg shadow-2xl text-xs text-slate-200 opacity-0 group-hover/info:opacity-100 pointer-events-none transition-opacity z-50">
+                 <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 w-72 p-4 bg-slate-900/95 backdrop-blur-xl border border-slate-600 rounded-lg shadow-2xl text-xs text-slate-200 opacity-0 group-hover/info:opacity-100 pointer-events-none transition-opacity z-[1000]">
                    <div className="font-semibold text-blue-300 mb-1 border-b border-slate-700 pb-1">Análisis</div>
                    <p className="leading-relaxed">{data.definition.description}</p>
                    {/* Arrow */}
@@ -88,10 +89,10 @@ const MetricCard: React.FC<MetricCardProps> = ({ data }) => {
         </div>
       </div>
 
-      {/* Chart Section - Rounded only at bottom, Overflow hidden HERE only to mask chart lines */}
+      {/* Chart Section */}
       <div className="flex-1 w-full min-h-0 relative -mt-4 overflow-hidden rounded-b-xl z-10">
         <ResponsiveContainer width="100%" height="100%">
-          <AreaChart data={chartData} margin={{ top: 0, right: 0, left: 0, bottom: 0 }}>
+          <AreaChart data={chartData} margin={{ top: 10, right: 0, left: 0, bottom: 25 }}>
             <defs>
               <linearGradient id={`gradient-${data.definition.id}`} x1="0" y1="0" x2="0" y2="1">
                 <stop offset="5%" stopColor={sentimentColor} stopOpacity={0.3}/>
@@ -111,7 +112,7 @@ const MetricCard: React.FC<MetricCardProps> = ({ data }) => {
                 borderRadius: '8px', 
                 fontSize: '12px', 
                 padding: '8px',
-                boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)'
+                zIndex: 1000
               }}
               itemStyle={{ color: '#f1f5f9' }}
               labelStyle={{ color: '#94a3b8', marginBottom: '4px' }}
@@ -120,10 +121,10 @@ const MetricCard: React.FC<MetricCardProps> = ({ data }) => {
             />
             
             {thresholds?.goodLevel !== undefined && (
-               <ReferenceLine y={thresholds.goodLevel} stroke="#10b981" strokeDasharray="3 3" strokeWidth={1} label={{ position: 'right', value: 'Good', fontSize: 8, fill: '#10b981' }} />
+               <ReferenceLine y={thresholds.goodLevel} stroke="#10b981" strokeDasharray="3 3" strokeWidth={1} />
             )}
             {thresholds?.badLevel !== undefined && (
-               <ReferenceLine y={thresholds.badLevel} stroke="#ef4444" strokeDasharray="3 3" strokeWidth={1} label={{ position: 'right', value: 'Risk', fontSize: 8, fill: '#ef4444' }} />
+               <ReferenceLine y={thresholds.badLevel} stroke="#ef4444" strokeDasharray="3 3" strokeWidth={1} />
             )}
             
             <Area 
@@ -139,15 +140,29 @@ const MetricCard: React.FC<MetricCardProps> = ({ data }) => {
         </ResponsiveContainer>
         
         {/* Min/Max Labels Overlay */}
-        <div className="absolute right-2 top-6 text-[9px] text-slate-500 font-mono bg-slate-900/60 px-1.5 py-0.5 rounded backdrop-blur-sm pointer-events-none border border-slate-800/50">
+        <div className="absolute right-2 top-8 text-[9px] text-slate-500 font-mono bg-slate-900/60 px-1.5 py-0.5 rounded backdrop-blur-sm pointer-events-none border border-slate-800/50">
             H: {maxValue.toLocaleString('en-US', { maximumFractionDigits: 1 })}
         </div>
         <div className="absolute right-2 bottom-12 text-[9px] text-slate-500 font-mono bg-slate-900/60 px-1.5 py-0.5 rounded backdrop-blur-sm pointer-events-none border border-slate-800/50">
             L: {minValue.toLocaleString('en-US', { maximumFractionDigits: 1 })}
         </div>
 
+        {/* Legend */}
+        <div className="absolute bottom-9 left-4 flex gap-3 pointer-events-none">
+            <div className="flex items-center gap-1">
+                <div className="w-2 h-0.5" style={{ backgroundColor: sentimentColor }}></div>
+                <span className="text-[8px] text-slate-500 uppercase">Trend</span>
+            </div>
+            {(thresholds?.goodLevel || thresholds?.badLevel) && (
+                <div className="flex items-center gap-1">
+                    <div className="w-2 h-px border-t border-dashed border-slate-400"></div>
+                    <span className="text-[8px] text-slate-500 uppercase">Limit</span>
+                </div>
+            )}
+        </div>
+
         {/* Footer Link */}
-        <div className="absolute bottom-0 left-0 w-full h-9 border-t border-slate-800 bg-slate-900/90 flex justify-between items-center px-4 backdrop-blur-sm z-20">
+        <div className="absolute bottom-0 left-0 w-full h-8 border-t border-slate-800 bg-slate-900/90 flex justify-between items-center px-4 backdrop-blur-sm z-20">
             <div className="flex items-center gap-1.5 opacity-60">
                 <span className="text-[9px] uppercase tracking-wider font-bold text-slate-500">Fuente</span>
             </div>

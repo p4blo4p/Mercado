@@ -18,23 +18,23 @@ const __dirname = path.dirname(__filename);
 // Mapa de IDs a Tickers de Yahoo
 // Si es null, usa MANUAL_OVERRIDES exclusivamente
 const TICKER_MAP = {
-  'yield_curve': null, // Yahoo ticker ^T10Y2Y a veces falla, usamos manual
+  'yield_curve': null, 
   'ism_pmi': null, 
   'fed_funds': null, 
-  'credit_spreads': null, // HYG es proxy sucio, mejor manual
+  'credit_spreads': null,
   'm2_growth': null, 
   'unemployment': null,
   'lei': null, 
   'nfp': null,
   'cpi': null,
   'consumer_conf': null, 
-  'buffett': null, // Yahoo no tiene GDP
+  'buffett': null, 
   'cape': null, 
   'bond_vs_stock': null, 
   'sp500_margin': null,
   'vix': '^VIX',
   'fear_greed': null,
-  'put_call': '^CPC', 
+  'put_call': null, // Yahoo ^CPC falla (404), movido a manual
   'sp500_ma200': '^GSPC',
   '10y_yield': '^TNX',
   'oil_wti': 'CL=F',
@@ -43,13 +43,13 @@ const TICKER_MAP = {
   'copper_gold': 'CALCULATED_COPPER_GOLD'
 };
 
-// DATOS REALES (Actualizados Enero/Febrero 2025)
+// DATOS REALES (Actualizados Febrero 2025)
 // Se usan cuando Yahoo no tiene un ticker directo para el indicador económico.
 const MANUAL_OVERRIDES = {
-  'yield_curve': { price: 0.16, change: 0.02, trend: 'up' }, // 10Y-2Y Spread positivo reciente
+  'yield_curve': { price: 0.16, change: 0.02, trend: 'up' }, 
   'ism_pmi': { price: 48.4, change: 0.0, trend: 'flat' }, 
   'fed_funds': { price: 4.50, change: 0.0, trend: 'flat' },
-  'credit_spreads': { price: 3.10, change: -0.05, trend: 'down' },
+  'credit_spreads': { price: 2.95, change: -0.05, trend: 'down' },
   'unemployment': { price: 4.2, change: 0.0, trend: 'flat' }, 
   'cpi': { price: 2.7, change: 0.1, trend: 'up' }, 
   'm2_growth': { price: 1.8, change: 0.2, trend: 'up' },
@@ -61,13 +61,13 @@ const MANUAL_OVERRIDES = {
   'fear_greed': { price: 48, change: -2, trend: 'down' },
   'bond_vs_stock': { price: 0.85, change: 0.01, trend: 'up' },
   'buffett': { price: 198.5, change: 0.5, trend: 'up' }, 
-  'cape': { price: 36.2, change: 0.1, trend: 'up' }
+  'cape': { price: 36.2, change: 0.1, trend: 'up' },
+  'put_call': { price: 0.92, change: 0.05, trend: 'up' } // Cierre reciente CBOE
 };
 
 // Función para obtener datos de Yahoo simulando un navegador (Sin librería)
 async function fetchRawYahooData(ticker) {
   try {
-    // URL no oficial pero pública de Yahoo Finance Query 1
     const url = `https://query1.finance.yahoo.com/v8/finance/chart/${ticker}?interval=1d&range=3mo`;
     
     const response = await fetch(url, {
@@ -91,7 +91,6 @@ async function fetchRawYahooData(ticker) {
     const prevClose = meta.chartPreviousClose;
     const change = ((price - prevClose) / prevClose) * 100;
     
-    // Historial
     const timestamps = result.timestamp || [];
     const closes = result.indicators.quote[0].close || [];
     
@@ -108,7 +107,7 @@ async function fetchRawYahooData(ticker) {
     return { 
         price, 
         change, 
-        history: history.reverse() // Más nuevo primero
+        history: history.reverse() 
     };
 
   } catch (e) {
@@ -117,7 +116,6 @@ async function fetchRawYahooData(ticker) {
   }
 }
 
-// Generador de historial sintético para datos manuales
 function generateTrendHistory(basePrice, trend, days = 60) {
     const history = [];
     let current = basePrice;
@@ -165,13 +163,12 @@ async function run() {
             };
             console.log(`✅ [Calculated] ${id}: ${ratio.toFixed(4)}`);
         } else {
-            // Fallback
             results[id] = { price: 0.17, changePercent: 0, history: generateTrendHistory(0.17, 'flat'), lastUpdated: now };
         }
         continue;
     }
 
-    // Manual Overrides (Datos Macro o Fallback de Tickers)
+    // Manual Overrides
     if (!ticker) {
         const override = MANUAL_OVERRIDES[id];
         results[id] = {
@@ -190,10 +187,7 @@ async function run() {
     if (data) {
         let { price, change, history } = data;
 
-        // Ajustes específicos
         if (['^TNX', '^IRX', '^T10Y2Y'].includes(ticker)) {
-             // Yahoo devuelve precios como 44.50 para 4.45% en algunos casos de bonos
-             // Lógica: Si es > 10 y es una tasa, probablemente necesite división
              if (price > 10) {
                  price = price / 10;
                  history = history.map(h => ({ ...h, value: h.value / 10 }));
@@ -208,7 +202,6 @@ async function run() {
         };
         console.log(`✅ [Yahoo-API] ${id}: ${price.toFixed(2)}`);
     } else {
-        // Fallback a Manual si Yahoo falla
         console.log(`⚠️ [Fallback] ${id} falló en Yahoo. Usando backup.`);
         const fallback = MANUAL_OVERRIDES[id] || { price: 100, change: 0, trend: 'flat' };
         results[id] = {
