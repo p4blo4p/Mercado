@@ -4,19 +4,17 @@ name: 3. Build & Deploy Web
 on:
   workflow_dispatch:
   # Se ejecuta AUTOMÁTICAMENTE cuando termina "2. Update Financial Data"
-  # Esto crea la cadena: Push Codigo -> Update Data -> Deploy Web
+  # Cadena: Push -> Update Data (Success) -> Deploy Web
   workflow_run:
     workflows: ["2. Update Financial Data"]
     types:
       - completed
 
-# Permisos necesarios para publicar en GitHub Pages
 permissions:
   contents: read
   pages: write
   id-token: write
 
-# Permitir solo un deploy a la vez
 concurrency:
   group: "pages"
   cancel-in-progress: true
@@ -24,7 +22,6 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
-    # Solo ejecutar si el workflow anterior fue exitoso
     if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch' }}
     steps:
       - name: Checkout

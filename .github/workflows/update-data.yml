@@ -3,10 +3,10 @@ name: 2. Update Financial Data
 
 on:
   schedule:
-    - cron: '0 10 * * *' # Ejecutar todos los días a las 10:00 UTC
+    - cron: '0 10 * * *' # Diario 10:00 UTC
   push:
-    branches: ["main"] # SE DISPARA AL SUBIR CODIGO
-  workflow_dispatch: # Botón manual
+    branches: ["main"] # SE DISPARA AL HACER PUSH
+  workflow_dispatch:
 
 jobs:
   fetch-metrics:
@@ -22,19 +22,7 @@ jobs:
         with:
           node-version: '20'
 
-      - name: Prepare Clean Environment
-        run: |
-          rm -f package.json package-lock.json
-          npm init -y
-          npm pkg set type="module"
-
-      - name: Install Fetch Script Dependencies
-        # Instalamos yahoo-finance2 v3 (latest) solo si fuera necesario, 
-        # pero el script actual es nativo. Dejamos esto por si acaso en el futuro.
-        # Al ser nativo ahora, realmente no necesita deps, pero mantenemos el clean env.
-        run: echo "Environment prepared."
-
-      - name: Fetch Data
+      - name: Fetch Data (Multi-Source Strategy)
         run: node scripts/fetch-metrics.js
 
       - name: Commit Data
@@ -42,5 +30,4 @@ jobs:
           git config --global user.name 'GitHub Action'
           git config --global user.email 'action@github.com'
           git add public/data/metrics.json
-          # Solo hacer commit si el JSON cambió
           git diff --quiet && git diff --staged --quiet || (git commit -m "Daily Data Update" && git push)

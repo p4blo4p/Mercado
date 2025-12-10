@@ -131,7 +131,7 @@ const App: React.FC = () => {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {data.map((metric) => (
-              <MetricCard key={metric.definition.id} data={metric} />
+              <MetricCard key={metric.definition.id} data={metric} timeRange={settings.timeRange} />
             ))}
           </div>
         )}
