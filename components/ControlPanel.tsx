@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { DataSource, TimeRange } from '../types';
 
 interface ControlPanelProps {
@@ -25,6 +25,29 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
   analyzing,
   lastUpdated
 }) => {
+  const [marketStatus, setMarketStatus] = useState<'OPEN' | 'CLOSED'>('CLOSED');
+
+  // Check US Market Status (9:30 AM - 4:00 PM ET, Mon-Fri)
+  useEffect(() => {
+    const checkMarket = () => {
+      const now = new Date();
+      // Convert to New York Time
+      const nyTime = new Date(now.toLocaleString("en-US", {timeZone: "America/New_York"}));
+      const day = nyTime.getDay(); // 0 is Sunday, 6 is Saturday
+      const hour = nyTime.getHours();
+      const minute = nyTime.getMinutes();
+      const totalMinutes = hour * 60 + minute;
+
+      // Market Hours: 9:30 (570 min) to 16:00 (960 min)
+      const isOpen = day >= 1 && day <= 5 && totalMinutes >= 570 && totalMinutes < 960;
+      setMarketStatus(isOpen ? 'OPEN' : 'CLOSED');
+    };
+
+    checkMarket();
+    const interval = setInterval(checkMarket, 60000);
+    return () => clearInterval(interval);
+  }, []);
+
   // Format last updated string
   const formattedDate = lastUpdated 
     ? new Date(lastUpdated).toLocaleString('es-ES', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
@@ -43,11 +66,17 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
               <h1 className="text-xl font-bold tracking-tight text-white hidden sm:block leading-none">
                 MacroLoop <span className="text-slate-500 font-normal">Analytics</span>
               </h1>
-              {formattedDate && (
-                  <span className="text-[9px] text-slate-500 block mt-0.5">
-                    Actualizado: {formattedDate}
-                  </span>
-              )}
+              <div className="flex items-center gap-2 mt-1">
+                  {formattedDate && (
+                      <span className="text-[9px] text-slate-500 block">
+                        Actualizado: {formattedDate}
+                      </span>
+                  )}
+                  <div className="flex items-center gap-1 bg-slate-800/80 px-1.5 py-0.5 rounded-full border border-slate-700">
+                      <div className={`w-1.5 h-1.5 rounded-full ${marketStatus === 'OPEN' ? 'bg-emerald-500 animate-pulse' : 'bg-red-500'}`}></div>
+                      <span className="text-[8px] font-bold text-slate-400 uppercase">{marketStatus === 'OPEN' ? 'Market Open' : 'Market Closed'}</span>
+                  </div>
+              </div>
            </div>
         </div>
 

@@ -113,7 +113,11 @@ const App: React.FC = () => {
               </div>
               <div className="prose prose-invert prose-sm max-w-none text-slate-300">
                 <div className="whitespace-pre-line leading-relaxed">
-                  {aiAnalysis}
+                   {aiAnalysis.split('\n').map((line, i) => {
+                      if (line.startsWith('**') || line.startsWith('###')) return <strong key={i} className="block text-indigo-200 mt-2 text-base">{line.replace(/[*#]/g, '')}</strong>;
+                      if (line.startsWith('*') || line.startsWith('-')) return <li key={i} className="ml-4 marker:text-indigo-400">{line.replace(/[*]/g, '')}</li>;
+                      return <p key={i} className="mb-2">{line}</p>;
+                   })}
                 </div>
               </div>
             </div>

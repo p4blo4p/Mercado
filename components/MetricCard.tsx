@@ -1,27 +1,31 @@
 
 import React, { useMemo } from 'react';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts';
-import { MetricData } from '../types';
+import { MetricData, TimeRange } from '../types';
 
 interface MetricCardProps {
   data: MetricData;
+  timeRange: TimeRange;
 }
 
-const MetricCard: React.FC<MetricCardProps> = ({ data }) => {
+const MetricCard: React.FC<MetricCardProps> = ({ data, timeRange }) => {
   const chartData = useMemo(() => data.history, [data.history]);
   
   // Calculate dynamic change based on the visible history range
   const { calculatedChange, calculatedPercent } = useMemo(() => {
+     if (timeRange === TimeRange.D1) {
+         return { calculatedChange: data.change, calculatedPercent: data.changePercent };
+     }
+
      if (chartData.length < 2) {
          return { calculatedChange: data.change, calculatedPercent: data.changePercent };
      }
      const startValue = chartData[0].value;
      const endValue = data.currentValue;
      const change = endValue - startValue;
-     // Avoid division by zero
      const percent = startValue !== 0 ? (change / startValue) * 100 : 0;
      return { calculatedChange: change, calculatedPercent: percent };
-  }, [chartData, data.currentValue, data.change, data.changePercent]);
+  }, [chartData, data.currentValue, data.change, data.changePercent, timeRange]);
 
   const isPositive = calculatedPercent >= 0; 
   const sentimentColor = isPositive ? '#10b981' : '#ef4444'; 
@@ -29,16 +33,17 @@ const MetricCard: React.FC<MetricCardProps> = ({ data }) => {
   const thresholds = data.definition.thresholds;
 
   const allValues = data.history.map(d => d.value);
-  // Include thresholds in domain calculation so lines are visible
   if (thresholds?.goodLevel !== undefined) allValues.push(thresholds.goodLevel);
   if (thresholds?.badLevel !== undefined) allValues.push(thresholds.badLevel);
 
   const minValue = Math.min(...allValues);
   const maxValue = Math.max(...allValues);
   const range = maxValue - minValue;
-  // Increase padding to prevent flat lines
   const padding = range === 0 ? minValue * 0.05 : range * 0.2; 
   const yDomain = [minValue - padding, maxValue + padding];
+
+  // Calculate position percentage for the Range Bar
+  const rangePercent = range === 0 ? 50 : ((data.currentValue - minValue) / range) * 100;
 
   // Helper for Favicon
   const getHostname = (url: string) => {
@@ -56,7 +61,7 @@ const MetricCard: React.FC<MetricCardProps> = ({ data }) => {
 
   return (
     <div 
-      className="bg-surface rounded-xl border border-slate-700 shadow-lg hover:shadow-2xl hover:border-slate-500 transition-all duration-300 flex flex-col h-[360px] group relative hover:z-50"
+      className="bg-surface rounded-xl border border-slate-700 shadow-lg hover:shadow-2xl hover:border-slate-500 transition-all duration-300 flex flex-col h-[380px] group relative hover:z-50"
     >
       {/* Header Section */}
       <div className="p-4 pb-2 flex flex-col justify-between items-start z-30 relative">
@@ -75,12 +80,11 @@ const MetricCard: React.FC<MetricCardProps> = ({ data }) => {
                  <path fillRule="evenodd" d="M18 10a8 8 0 1 1-16 0 8 8 0 0 1 16 0ZM9 5a5.5 5.5 0 1 0 0 11 5.5 5.5 0 0 0 0-11Zm.75 2.25a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0ZM9 8.75a.75.75 0 0 1 .75.75v3.5a.75.75 0 0 1-1.5 0v-3.5a.75.75 0 0 1 .75-.75Z" clipRule="evenodd" />
                </svg>
                
-               {/* Tooltip Popup - Z-Index 1000 to overlay header */}
+               {/* Tooltip Popup */}
                {data.definition.description && (
                  <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 w-72 p-4 bg-slate-900/95 backdrop-blur-xl border border-slate-600 rounded-lg shadow-2xl text-xs text-slate-200 opacity-0 group-hover/info:opacity-100 pointer-events-none transition-opacity z-[1000]">
                    <div className="font-semibold text-blue-300 mb-1 border-b border-slate-700 pb-1">Análisis</div>
                    <p className="leading-relaxed">{data.definition.description}</p>
-                   {/* Arrow */}
                    <div className="absolute top-full left-1/2 -translate-x-1/2 -mt-1 border-4 border-transparent border-t-slate-600"></div>
                  </div>
                )}
@@ -98,6 +102,7 @@ const MetricCard: React.FC<MetricCardProps> = ({ data }) => {
               <div className={`text-xs font-bold px-2 py-1 rounded-md flex items-center gap-1 ${isPositive ? 'bg-emerald-500/10 text-emerald-400' : 'bg-red-500/10 text-red-400'}`}>
                 <span>{isPositive ? '▲' : '▼'}</span>
                 <span>{Math.abs(calculatedPercent).toFixed(2)}%</span>
+                {timeRange !== TimeRange.D1 && <span className="text-[9px] opacity-70 ml-1">({timeRange})</span>}
               </div>
             </div>
         </div>
@@ -106,7 +111,7 @@ const MetricCard: React.FC<MetricCardProps> = ({ data }) => {
       {/* Chart Section */}
       <div className="flex-1 w-full min-h-0 relative -mt-4 overflow-hidden rounded-b-xl z-10">
         <ResponsiveContainer width="100%" height="100%">
-          <AreaChart data={chartData} margin={{ top: 10, right: 0, left: 0, bottom: 25 }}>
+          <AreaChart data={chartData} margin={{ top: 10, right: 0, left: 0, bottom: 45 }}>
             <defs>
               <linearGradient id={`gradient-${data.definition.id}`} x1="0" y1="0" x2="0" y2="1">
                 <stop offset="5%" stopColor={sentimentColor} stopOpacity={0.3}/>
@@ -157,22 +162,31 @@ const MetricCard: React.FC<MetricCardProps> = ({ data }) => {
         <div className="absolute right-2 top-8 text-[9px] text-slate-500 font-mono bg-slate-900/60 px-1.5 py-0.5 rounded backdrop-blur-sm pointer-events-none border border-slate-800/50">
             H: {maxValue.toLocaleString('en-US', { maximumFractionDigits: 1 })}
         </div>
-        <div className="absolute right-2 bottom-12 text-[9px] text-slate-500 font-mono bg-slate-900/60 px-1.5 py-0.5 rounded backdrop-blur-sm pointer-events-none border border-slate-800/50">
+        <div className="absolute right-2 bottom-20 text-[9px] text-slate-500 font-mono bg-slate-900/60 px-1.5 py-0.5 rounded backdrop-blur-sm pointer-events-none border border-slate-800/50">
             L: {minValue.toLocaleString('en-US', { maximumFractionDigits: 1 })}
         </div>
 
+        {/* Range Bar Indicator */}
+        <div className="absolute bottom-11 left-4 right-4 h-1.5 bg-slate-800/80 rounded-full overflow-hidden backdrop-blur-sm border border-slate-700/50" title="Rango de Precio en el periodo seleccionado">
+             <div 
+               className="h-full rounded-full transition-all duration-1000"
+               style={{ 
+                 width: '6px', 
+                 left: `${Math.min(98, Math.max(0, rangePercent))}%`,
+                 position: 'absolute',
+                 backgroundColor: isPositive ? '#10b981' : '#ef4444',
+                 boxShadow: `0 0 6px ${isPositive ? '#10b981' : '#ef4444'}`
+               }}
+             ></div>
+             <div className="w-full h-full opacity-30" style={{ background: `linear-gradient(90deg, transparent, ${isPositive ? '#10b981' : '#ef4444'} 50%, transparent)` }}></div>
+        </div>
+
         {/* Legend */}
-        <div className="absolute bottom-9 left-4 flex gap-3 pointer-events-none">
+        <div className="absolute bottom-14 left-4 flex gap-3 pointer-events-none opacity-60">
             <div className="flex items-center gap-1">
                 <div className="w-2 h-0.5" style={{ backgroundColor: sentimentColor }}></div>
                 <span className="text-[8px] text-slate-500 uppercase">Trend</span>
             </div>
-            {(thresholds?.goodLevel || thresholds?.badLevel) && (
-                <div className="flex items-center gap-1">
-                    <div className="w-2 h-px border-t border-dashed border-slate-400"></div>
-                    <span className="text-[8px] text-slate-500 uppercase">Limit</span>
-                </div>
-            )}
         </div>
 
         {/* Footer Link */}
