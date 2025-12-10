@@ -4,6 +4,7 @@ import { fetchDashboardData } from './services/dataService';
 import { analyzeMarketData } from './services/geminiService';
 import ControlPanel from './components/ControlPanel';
 import MetricCard from './components/MetricCard';
+import MarketSummary from './components/MarketSummary';
 
 const STORAGE_KEY = 'macroloop_settings_v1';
 
@@ -131,10 +132,13 @@ const App: React.FC = () => {
           </div>
         )}
 
+        {/* Static Analysis Summary */}
+        <MarketSummary />
+
       </main>
 
       <footer className="max-w-7xl mx-auto px-4 mt-12 text-center text-slate-600 text-xs pb-8">
-        <p>© 2024 MacroLoop Analytics. Data simulated for demonstration purposes.</p>
+        <p>© 2024 MacroLoop Analytics. Data sourced from Yahoo Finance & Market APIs.</p>
         <p className="mt-2">Powered by Google Gemini & Recharts</p>
       </footer>
     </div>
