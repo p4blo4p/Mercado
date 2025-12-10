@@ -8,29 +8,24 @@ interface MetricCardProps {
 }
 
 const MetricCard: React.FC<MetricCardProps> = ({ data }) => {
-  const isPositive = data.changePercent >= 0; // Use changePercent for color logic
-  
-  // Logic: Some metrics are "Bad" if they go up (VIX, Inflation). 
-  // For simplicity, we stick to Green=Up, Red=Down unless heavily customized, 
-  // but let's use a specialized "Sentiment" color if provided, otherwise standard.
+  const isPositive = data.changePercent >= 0; 
   const sentimentColor = isPositive ? '#10b981' : '#ef4444'; 
 
   const chartData = useMemo(() => data.history, [data.history]);
   const thresholds = data.definition.thresholds;
 
   const allValues = data.history.map(d => d.value);
+  // Include thresholds in domain calculation so lines are visible
   if (thresholds?.goodLevel !== undefined) allValues.push(thresholds.goodLevel);
   if (thresholds?.badLevel !== undefined) allValues.push(thresholds.badLevel);
 
   const minValue = Math.min(...allValues);
   const maxValue = Math.max(...allValues);
   const range = maxValue - minValue;
-  
-  // Add some breathing room to the chart
   const padding = range === 0 ? minValue * 0.05 : range * 0.1; 
   const yDomain = [minValue - padding, maxValue + padding];
 
-  // Helper to extract hostname for favicon
+  // Helper for Favicon
   const getHostname = (url: string) => {
     try {
       return new URL(url).hostname;
@@ -47,28 +42,26 @@ const MetricCard: React.FC<MetricCardProps> = ({ data }) => {
   return (
     <div 
       className="bg-surface rounded-xl border border-slate-700 shadow-lg hover:shadow-2xl hover:border-slate-500 transition-all duration-300 flex flex-col h-[340px] group relative"
-      /* Removed global overflow-hidden to allow tooltip to pop out */
     >
       {/* Header Section */}
-      <div className="p-4 pb-2 flex flex-col justify-between items-start z-20 relative">
+      <div className="p-4 pb-2 flex flex-col justify-between items-start z-30 relative">
         <div className="w-full flex justify-between items-center pr-1">
            <div className="flex items-center gap-2 relative">
              <h3 className="text-slate-300 text-xs font-bold uppercase tracking-wider truncate cursor-default">
                {data.definition.name}
              </h3>
              
-             {/* Info Icon with Improved Tooltip Positioning */}
+             {/* Info Icon */}
              <div className="group/info relative flex items-center justify-center cursor-help">
                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-3.5 h-3.5 text-slate-500 hover:text-blue-400 transition-colors">
                  <path fillRule="evenodd" d="M18 10a8 8 0 1 1-16 0 8 8 0 0 1 16 0ZM9 5a5.5 5.5 0 1 0 0 11 5.5 5.5 0 0 0 0-11Zm.75 2.25a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0ZM9 8.75a.75.75 0 0 1 .75.75v3.5a.75.75 0 0 1-1.5 0v-3.5a.75.75 0 0 1 .75-.75Z" clipRule="evenodd" />
                </svg>
                
-               {/* Tooltip Popup */}
+               {/* Tooltip Popup - Fixed Z-Index and Position */}
                {data.definition.description && (
                  <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 w-64 p-3 bg-slate-900/95 backdrop-blur-xl border border-slate-600 rounded-lg shadow-2xl text-xs text-slate-200 opacity-0 group-hover/info:opacity-100 pointer-events-none transition-opacity z-50">
-                   <div className="font-semibold text-blue-300 mb-1 border-b border-slate-700 pb-1">Análisis e Interpretación</div>
+                   <div className="font-semibold text-blue-300 mb-1 border-b border-slate-700 pb-1">Análisis</div>
                    <p className="leading-relaxed">{data.definition.description}</p>
-                   {/* Arrow */}
                    <div className="absolute top-full left-1/2 -translate-x-1/2 -mt-1 border-4 border-transparent border-t-slate-600"></div>
                  </div>
                )}
@@ -77,7 +70,7 @@ const MetricCard: React.FC<MetricCardProps> = ({ data }) => {
         </div>
         
         <div className="w-full flex justify-between items-baseline mt-2">
-            <span className={`text-3xl font-bold tracking-tight ${data.isSimulated ? 'text-amber-400' : 'text-white'}`} title={data.isSimulated ? "Dato estimado (no en tiempo real)" : "Dato Real"}>
+            <span className={`text-3xl font-bold tracking-tight ${data.isSimulated ? 'text-amber-400' : 'text-white'}`} title={data.isSimulated ? "Estimado" : "Dato Real"}>
               {data.currentValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               <span className="text-sm font-medium text-slate-500 ml-1">{data.definition.suffix}</span>
             </span>
@@ -91,8 +84,8 @@ const MetricCard: React.FC<MetricCardProps> = ({ data }) => {
         </div>
       </div>
 
-      {/* Chart Section - Rounded only at bottom */}
-      <div className="flex-1 w-full min-h-0 relative -mt-4 overflow-hidden rounded-b-xl">
+      {/* Chart Section - Rounded only at bottom, Overflow hidden HERE only */}
+      <div className="flex-1 w-full min-h-0 relative -mt-4 overflow-hidden rounded-b-xl z-10">
         <ResponsiveContainer width="100%" height="100%">
           <AreaChart data={chartData} margin={{ top: 0, right: 0, left: 0, bottom: 0 }}>
             <defs>
@@ -113,13 +106,12 @@ const MetricCard: React.FC<MetricCardProps> = ({ data }) => {
                 color: '#f1f5f9', 
                 borderRadius: '8px', 
                 fontSize: '12px', 
-                padding: '8px',
-                boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.5)' 
+                padding: '8px' 
               }}
               itemStyle={{ color: '#f1f5f9' }}
-              formatter={(value: number) => [value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }), 'Valor']}
               labelStyle={{ color: '#94a3b8', marginBottom: '4px' }}
-              cursor={{ stroke: '#475569', strokeWidth: 1, strokeDasharray: '4 4' }}
+              cursor={{ stroke: '#475569', strokeDasharray: '4 4' }}
+              formatter={(val:number) => [val.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2}), 'Valor']}
             />
             
             {thresholds?.goodLevel !== undefined && (
@@ -141,17 +133,17 @@ const MetricCard: React.FC<MetricCardProps> = ({ data }) => {
           </AreaChart>
         </ResponsiveContainer>
         
-        {/* Min/Max Labels Overlay */}
-        <div className="absolute right-2 top-6 text-[9px] text-slate-500 font-mono bg-slate-900/50 px-1 rounded backdrop-blur-sm">
+        {/* Min/Max Labels */}
+        <div className="absolute right-2 top-6 text-[9px] text-slate-500 font-mono bg-slate-900/50 px-1 rounded backdrop-blur-sm pointer-events-none">
             High: {maxValue.toLocaleString('en-US', { maximumFractionDigits: 1 })}
         </div>
-        <div className="absolute right-2 bottom-12 text-[9px] text-slate-500 font-mono bg-slate-900/50 px-1 rounded backdrop-blur-sm">
+        <div className="absolute right-2 bottom-12 text-[9px] text-slate-500 font-mono bg-slate-900/50 px-1 rounded backdrop-blur-sm pointer-events-none">
             Low: {minValue.toLocaleString('en-US', { maximumFractionDigits: 1 })}
         </div>
 
-        {/* Footer / Source Link Section */}
+        {/* Footer Link */}
         <div className="absolute bottom-0 left-0 w-full h-9 border-t border-slate-800 bg-slate-900/80 flex justify-between items-center px-4 backdrop-blur-sm z-20">
-            <div className="flex items-center gap-1.5 opacity-60 hover:opacity-100 transition-opacity">
+            <div className="flex items-center gap-1.5 opacity-60">
                 <span className="text-[9px] uppercase tracking-wider font-bold text-slate-500">Fuente</span>
             </div>
             
@@ -160,12 +152,11 @@ const MetricCard: React.FC<MetricCardProps> = ({ data }) => {
                 href={data.sourceUrl} 
                 target="_blank" 
                 rel="noopener noreferrer"
-                className="flex items-center gap-2 text-[10px] text-blue-400 hover:text-blue-300 transition-colors group/link"
-                title={`Ir a ${capitalizedSource}`}
+                className="flex items-center gap-2 text-[10px] text-blue-400 hover:text-blue-300 transition-colors"
             >
                 <img 
                 src={faviconUrl} 
-                alt="icon" 
+                alt="src" 
                 className="w-3.5 h-3.5 rounded-sm"
                 onError={(e) => { e.currentTarget.style.display = 'none'; }}
                 />

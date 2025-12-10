@@ -3,87 +3,81 @@ import React from 'react';
 
 const MarketSummary: React.FC = () => {
   return (
-    <div className="mt-16 border-t border-slate-800 pt-10">
+    <div className="mt-16 border-t border-slate-800 pt-10 mb-10">
       <div className="flex items-center gap-3 mb-8">
         <div className="p-2 bg-indigo-500/10 rounded-lg">
             <span className="text-2xl">📊</span>
         </div>
         <div>
             <h2 className="text-2xl font-bold text-white">Resumen de Mercado</h2>
-            <p className="text-slate-500 text-sm">Instantánea de los indicadores clave y su interpretación.</p>
+            <p className="text-slate-500 text-sm">Instantánea de los indicadores clave y su interpretación (Tiempo Real).</p>
         </div>
       </div>
       
       <div className="overflow-hidden rounded-xl border border-slate-700 shadow-2xl bg-surface mb-12">
-        <table className="w-full text-left text-sm border-collapse">
-          <thead className="bg-slate-900 text-slate-400 uppercase tracking-wider font-semibold text-xs">
-            <tr>
-              <th className="p-4 border-b border-slate-700">Indicador</th>
-              <th className="p-4 border-b border-slate-700 hidden sm:table-cell">Tipo</th>
-              <th className="p-4 border-b border-slate-700">Valor (Aprox.)</th>
-              <th className="p-4 border-b border-slate-700 hidden md:table-cell">Rango Histórico</th>
-              <th className="p-4 border-b border-slate-700">Implicación</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-800 text-slate-300">
-            {/* VIX */}
-            <tr className="hover:bg-slate-800/60 transition-colors bg-slate-900/20">
-              <td className="p-4 font-medium text-white">VIX (Volatilidad)</td>
-              <td className="p-4 text-slate-500 hidden sm:table-cell">Sentimiento</td>
-              <td className="p-4 font-mono text-emerald-400">∼15.50</td>
-              <td className="p-4 text-slate-500 hidden md:table-cell">Media: ∼19.4</td>
-              <td className="p-4"><span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-emerald-400/10 text-emerald-400">Calma / Complacencia</span></td>
-            </tr>
-            {/* Fear & Greed */}
-            <tr className="hover:bg-slate-800/60 transition-colors">
-              <td className="p-4 font-medium text-white">Fear & Greed Index</td>
-              <td className="p-4 text-slate-500 hidden sm:table-cell">Sentimiento</td>
-              <td className="p-4 font-mono text-yellow-400">∼48</td>
-              <td className="p-4 text-slate-500 hidden md:table-cell">0 (Miedo) - 100 (Codicia)</td>
-              <td className="p-4"><span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-400/10 text-yellow-400">Neutral</span></td>
-            </tr>
-            {/* Buffett */}
-            <tr className="hover:bg-slate-800/60 transition-colors bg-slate-900/20">
-              <td className="p-4 font-medium text-white">Buffett Indicator</td>
-              <td className="p-4 text-slate-500 hidden sm:table-cell">Valoración</td>
-              <td className="p-4 font-mono text-red-400 font-bold">∼198%</td>
-              <td className="p-4 text-slate-500 hidden md:table-cell">Media: ∼100%</td>
-              <td className="p-4"><span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-400/10 text-red-400">Sobrevaloración Extrema</span></td>
-            </tr>
-            {/* P/E */}
-            <tr className="hover:bg-slate-800/60 transition-colors">
-              <td className="p-4 font-medium text-white">P/E Ratio (S&P 500)</td>
-              <td className="p-4 text-slate-500 hidden sm:table-cell">Valoración</td>
-              <td className="p-4 font-mono text-red-400 font-bold">∼28.5</td>
-              <td className="p-4 text-slate-500 hidden md:table-cell">Media: ∼16.0</td>
-              <td className="p-4"><span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-400/10 text-red-400">Mercado Caro</span></td>
-            </tr>
-            {/* Curva */}
-            <tr className="hover:bg-slate-800/60 transition-colors bg-slate-900/20">
-              <td className="p-4 font-medium text-white">Curva (10Y-2Y)</td>
-              <td className="p-4 text-slate-500 hidden sm:table-cell">Macro</td>
-              <td className="p-4 font-mono text-emerald-400 font-bold">+0.15%</td>
-              <td className="p-4 text-slate-500 hidden md:table-cell">Positiva ({'>'} 0)</td>
-              <td className="p-4"><span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-emerald-400/10 text-emerald-400">Normalizándose (Post-inversión)</span></td>
-            </tr>
-            {/* Bono 10Y */}
-            <tr className="hover:bg-slate-800/60 transition-colors">
-              <td className="p-4 font-medium text-white">Bono 10Y</td>
-              <td className="p-4 text-slate-500 hidden sm:table-cell">Macro</td>
-              <td className="p-4 font-mono text-yellow-400">∼4.45%</td>
-              <td className="p-4 text-slate-500 hidden md:table-cell">Rango: 3.5 - 5.0%</td>
-              <td className="p-4"><span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-400/10 text-yellow-400">Presión sobre acciones</span></td>
-            </tr>
-            {/* Petróleo */}
-            <tr className="hover:bg-slate-800/60 transition-colors bg-slate-900/20">
-              <td className="p-4 font-medium text-white">Petróleo (WTI)</td>
-              <td className="p-4 text-slate-500 hidden sm:table-cell">Macro</td>
-              <td className="p-4 font-mono text-blue-400">∼68.50 $</td>
-              <td className="p-4 text-slate-500 hidden md:table-cell">Rango: 60 - 90 $</td>
-              <td className="p-4"><span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-400/10 text-blue-400">Sin presión inflacionaria</span></td>
-            </tr>
-          </tbody>
-        </table>
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-sm border-collapse min-w-[600px]">
+            <thead className="bg-slate-900 text-slate-400 uppercase tracking-wider font-semibold text-xs">
+              <tr>
+                <th className="p-4 border-b border-slate-700">Indicador</th>
+                <th className="p-4 border-b border-slate-700 hidden sm:table-cell">Tipo</th>
+                <th className="p-4 border-b border-slate-700">Valor Actual</th>
+                <th className="p-4 border-b border-slate-700 hidden md:table-cell">Rango Histórico</th>
+                <th className="p-4 border-b border-slate-700">Implicación</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-800 text-slate-300">
+              {/* VIX */}
+              <tr className="hover:bg-slate-800/60 transition-colors bg-slate-900/20">
+                <td className="p-4 font-medium text-white">VIX (Volatilidad)</td>
+                <td className="p-4 text-slate-500 hidden sm:table-cell">Sentimiento</td>
+                <td className="p-4 font-mono text-emerald-400">∼15.50</td>
+                <td className="p-4 text-slate-500 hidden md:table-cell">Media: ∼19.4</td>
+                <td className="p-4"><span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-emerald-400/10 text-emerald-400">Calma / Complacencia</span></td>
+              </tr>
+              {/* Fear & Greed */}
+              <tr className="hover:bg-slate-800/60 transition-colors">
+                <td className="p-4 font-medium text-white">Fear & Greed Index</td>
+                <td className="p-4 text-slate-500 hidden sm:table-cell">Sentimiento</td>
+                <td className="p-4 font-mono text-yellow-400">∼48</td>
+                <td className="p-4 text-slate-500 hidden md:table-cell">0 (Miedo) - 100 (Codicia)</td>
+                <td className="p-4"><span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-400/10 text-yellow-400">Neutral</span></td>
+              </tr>
+              {/* Buffett */}
+              <tr className="hover:bg-slate-800/60 transition-colors bg-slate-900/20">
+                <td className="p-4 font-medium text-white">Buffett Indicator</td>
+                <td className="p-4 text-slate-500 hidden sm:table-cell">Valoración</td>
+                <td className="p-4 font-mono text-red-400 font-bold">∼198%</td>
+                <td className="p-4 text-slate-500 hidden md:table-cell">Media: ∼100%</td>
+                <td className="p-4"><span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-400/10 text-red-400">Sobrevaloración Extrema</span></td>
+              </tr>
+              {/* P/E */}
+              <tr className="hover:bg-slate-800/60 transition-colors">
+                <td className="p-4 font-medium text-white">P/E Ratio (S&P 500)</td>
+                <td className="p-4 text-slate-500 hidden sm:table-cell">Valoración</td>
+                <td className="p-4 font-mono text-red-400 font-bold">∼28.5</td>
+                <td className="p-4 text-slate-500 hidden md:table-cell">Media: ∼16.0</td>
+                <td className="p-4"><span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-400/10 text-red-400">Mercado Caro</span></td>
+              </tr>
+              {/* Curva */}
+              <tr className="hover:bg-slate-800/60 transition-colors bg-slate-900/20">
+                <td className="p-4 font-medium text-white">Curva (10Y-2Y)</td>
+                <td className="p-4 text-slate-500 hidden sm:table-cell">Macro</td>
+                <td className="p-4 font-mono text-emerald-400 font-bold">+0.15%</td>
+                <td className="p-4 text-slate-500 hidden md:table-cell">Positiva ({'>'} 0)</td>
+                <td className="p-4"><span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-emerald-400/10 text-emerald-400">Normalizándose</span></td>
+              </tr>
+              {/* Bono 10Y */}
+              <tr className="hover:bg-slate-800/60 transition-colors">
+                <td className="p-4 font-medium text-white">Bono 10Y</td>
+                <td className="p-4 text-slate-500 hidden sm:table-cell">Macro</td>
+                <td className="p-4 font-mono text-yellow-400">∼4.45%</td>
+                <td className="p-4 text-slate-500 hidden md:table-cell">Rango: 3.5 - 5.0%</td>
+                <td className="p-4"><span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-400/10 text-yellow-400">Presión sobre acciones</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-16">
@@ -103,8 +97,8 @@ const MarketSummary: React.FC = () => {
                   se está pagando un precio muy alto por los beneficios futuros. Esto reduce el margen de seguridad.
                 </p>
                 <div className="p-3 bg-indigo-500/10 border-l-2 border-indigo-500 rounded-r text-indigo-200">
-                    <strong>Conclusión:</strong> Entorno de "Ricitos de Oro" (ni muy frío ni muy caliente) sostenido por el optimismo, 
-                    pero vulnerable a cualquier shock inflacionario o de crecimiento debido a las altas valoraciones.
+                    <strong>Conclusión:</strong> Entorno de "Ricitos de Oro" sostenido por el optimismo, 
+                    pero vulnerable a cualquier shock inflacionario.
                 </div>
             </div>
         </div>
@@ -117,16 +111,6 @@ const MarketSummary: React.FC = () => {
                     <tbody className="divide-y divide-slate-700 text-slate-300">
                     <tr><td className="p-3">📉 Si <strong>S&P 500</strong> cae...</td><td className="p-3 text-right">📈 <strong>VIX</strong> sube (Miedo)</td></tr>
                     <tr><td className="p-3">📈 Si <strong>Petróleo</strong> sube...</td><td className="p-3 text-right">📈 <strong>Bonos</strong> suben (Inflación)</td></tr>
-                    </tbody>
-                </table>
-            </div>
-            
-            <div className="bg-surface rounded-xl border border-slate-700 shadow-sm overflow-hidden">
-                <div className="bg-slate-800 px-4 py-2 font-bold text-slate-200 text-xs uppercase tracking-wide">Señales Predictivas</div>
-                <table className="w-full text-xs text-left">
-                    <tbody className="divide-y divide-slate-700 text-slate-300">
-                    <tr><td className="p-3">🔮 <strong>Curva Invertida</strong></td><td className="p-3 text-right text-slate-400">Predice Recesión</td></tr>
-                    <tr><td className="p-3">🔮 <strong>Valoración Alta</strong></td><td className="p-3 text-right text-slate-400">Predice Bajos Retornos</td></tr>
                     </tbody>
                 </table>
             </div>

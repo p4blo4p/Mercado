@@ -1,4 +1,3 @@
-
 {
   "name": "macroloop-analytics",
   "version": "1.0.0",
@@ -14,7 +13,6 @@
     "react": "*",
     "react-dom": "*",
     "recharts": "*",
-    "yahoo-finance2": "*",
     "@google/genai": "*"
   },
   "devDependencies": {

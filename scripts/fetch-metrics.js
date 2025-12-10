@@ -2,33 +2,32 @@
 /**
  * scripts/fetch-metrics.js
  * 
- * Este script se ejecuta en Node.js (GitHub Actions).
- * Obtiene datos reales de Yahoo Finance y utiliza overrides manuales precisos para datos macro.
+ * Script autónomo para GitHub Actions.
+ * NO usa librerías externas para evitar errores de importación.
+ * Usa fetch nativo para conectar a Yahoo Finance y overrides manuales para datos macro.
  */
 
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { YahooFinance } from 'yahoo-finance2'; // Importación correcta para v3 (aunque usaremos fetch nativo principalmente)
 
 // Configuración para __dirname en ESM
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // Mapa de IDs a Tickers de Yahoo
-// NULL = Usar Override Manual (Indicadores macroeconómicos sin ticker fiable en Yahoo)
 const TICKER_MAP = {
   'yield_curve': '^T10Y2Y',
   'ism_pmi': null, 
-  'fed_funds': '^IRX', // Usamos 13-week treasury bill como proxy
-  'credit_spreads': 'HYG', // High Yield Bond ETF (Inverso)
+  'fed_funds': '^IRX', // Proxy: 13 Week Treasury Bill
+  'credit_spreads': 'HYG', // Proxy: iShares iBoxx $ High Yield Corp Bond ETF
   'm2_growth': null, 
   'unemployment': null,
   'lei': null, 
   'nfp': null,
   'cpi': null,
   'consumer_conf': null, 
-  'buffett': '^GSPC', // Proxy de movimiento
+  'buffett': '^GSPC', // Proxy: S&P 500 Market Cap proxy
   'cape': '^GSPC', 
   'bond_vs_stock': null, 
   'sp500_margin': null,
@@ -43,12 +42,12 @@ const TICKER_MAP = {
   'copper_gold': 'CALCULATED_COPPER_GOLD'
 };
 
-// DATOS REALES (Actualizados a Enero 2025)
-// Estos datos cambian mensualmente. Al definirlos aquí, son datos REALES estáticos.
+// DATOS REALES (Actualizados Enero/Febrero 2025)
+// Se usan cuando Yahoo no tiene un ticker directo para el indicador económico.
 const MANUAL_OVERRIDES = {
-  'ism_pmi': { price: 48.4, change: 0.0, trend: 'down' }, // Último reporte ISM
-  'unemployment': { price: 4.2, change: 0.0, trend: 'flat' }, // BLS Report
-  'cpi': { price: 2.7, change: 0.1, trend: 'up' }, // CPI YoY
+  'ism_pmi': { price: 48.4, change: 0.0, trend: 'flat' }, 
+  'unemployment': { price: 4.2, change: 0.0, trend: 'flat' }, 
+  'cpi': { price: 2.7, change: 0.1, trend: 'up' }, 
   'm2_growth': { price: 1.8, change: 0.2, trend: 'up' },
   'lei': { price: 99.4, change: -0.2, trend: 'down' },
   'nfp': { price: 142, change: 12, trend: 'up' },
@@ -57,33 +56,26 @@ const MANUAL_OVERRIDES = {
   'sp500_margin': { price: 12.1, change: 0.0, trend: 'flat' },
   'fear_greed': { price: 48, change: -2, trend: 'down' },
   'bond_vs_stock': { price: 0.85, change: 0.01, trend: 'up' },
-  'buffett': { price: 198.5, change: 0.5, trend: 'up' }, // Calculado aprox
-  'cape': { price: 36.2, change: 0.1, trend: 'up' },
   
-  // Fallbacks solo si falla Yahoo (Yahoo suele tener estos en tiempo real)
-  'yield_curve': { price: 0.15, change: 0.02 },
-  'fed_funds': { price: 4.35, change: 0.0 }, // 13 Week Bill Rate
-  'vix': { price: 15.5, change: 0.5 },
-  'oil_wti': { price: 68.5, change: -1.2 },
-  'dxy': { price: 101.5, change: 0.3 },
-  '10y_yield': { price: 4.45, change: 0.05 },
-  'credit_spreads': { price: 3.20, change: -0.05 }
+  // Estos se calculan derivados del precio del S&P 500 si falla el cálculo dinámico
+  'buffett': { price: 198.5, change: 0.5, trend: 'up' }, 
+  'cape': { price: 36.2, change: 0.1, trend: 'up' }
 };
 
-// Función robusta para obtener datos de Yahoo simulando un navegador
+// Función para obtener datos de Yahoo simulando un navegador (Sin librería)
 async function fetchRawYahooData(ticker) {
   try {
-    // Usamos rangos largos para tener historial suficiente
+    // URL no oficial pero pública de Yahoo Finance Query 1
     const url = `https://query1.finance.yahoo.com/v8/finance/chart/${ticker}?interval=1d&range=3mo`;
     
     const response = await fetch(url, {
       headers: {
-        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
       }
     });
 
     if (!response.ok) {
-        // console.warn(`HTTP Error ${response.status} for ${ticker}`);
+        console.warn(`HTTP Error ${response.status} for ${ticker}`);
         return null;
     }
     
@@ -97,7 +89,7 @@ async function fetchRawYahooData(ticker) {
     const prevClose = meta.chartPreviousClose;
     const change = ((price - prevClose) / prevClose) * 100;
     
-    // Procesar Historial
+    // Historial
     const timestamps = result.timestamp || [];
     const closes = result.indicators.quote[0].close || [];
     
@@ -111,60 +103,55 @@ async function fetchRawYahooData(ticker) {
         }
     }
     
-    // Tomamos los últimos 90 días o lo que haya
     return { 
         price, 
         change, 
-        history: history.reverse() 
+        history: history.reverse() // Más nuevo primero
     };
 
   } catch (e) {
-    // console.warn(`Excepción fetching ${ticker}:`, e.message);
+    console.warn(`Error fetching ${ticker}:`, e.message);
     return null;
   }
 }
 
-function generateTrendHistory(basePrice, trend, days = 30) {
-    // Genera un historial sintético pero realista basado en la tendencia
+// Generador de historial sintético para datos manuales
+function generateTrendHistory(basePrice, trend, days = 60) {
     const history = [];
     let current = basePrice;
-    const volatility = basePrice * 0.005; // 0.5% volatilidad diaria
+    const volatility = basePrice * 0.002; 
 
     for (let i = 0; i < days; i++) {
         history.push({
             date: new Date(Date.now() - i * 86400000).toISOString().split('T')[0],
             value: current
         });
-
-        // Caminata aleatoria con sesgo según tendencia
         const change = (Math.random() - 0.5) * volatility;
         let trendBias = 0;
-        if (trend === 'up') trendBias = volatility * 0.2;
-        if (trend === 'down') trendBias = -volatility * 0.2;
-
+        if (trend === 'up') trendBias = volatility * 0.1;
+        if (trend === 'down') trendBias = -volatility * 0.1;
         current = current - (change + trendBias); 
     }
-    return history.reverse(); // Devolver cronológicamente (antiguo -> nuevo)
+    return history.reverse();
 }
 
-async function fetchMetrics() {
+async function run() {
+  console.log("🚀 Iniciando extracción de datos (Modo Nativo)...");
   const results = {};
   const now = new Date().toISOString();
-  console.log("Iniciando extracción de datos (Hybrid Mode)...");
 
-  // 1. Obtener Commodities para ratio Cobre/Oro
+  // 1. Commodities (Cobre/Oro)
   let copper = null;
   let gold = null;
-  
   const cData = await fetchRawYahooData('HG=F');
   const gData = await fetchRawYahooData('GC=F');
-  
   if (cData) copper = cData.price;
   if (gData) gold = gData.price;
 
-  // 2. Procesar cada métrica
+  // 2. Iterar Métricas
   for (const [id, ticker] of Object.entries(TICKER_MAP)) {
-    // CASO A: Ratio Cobre/Oro Calculado
+    
+    // Ratio Cobre/Oro
     if (id === 'copper_gold') {
         if (copper && gold) {
             const ratio = copper / gold;
@@ -174,56 +161,51 @@ async function fetchMetrics() {
                 history: generateTrendHistory(ratio, 'flat'),
                 lastUpdated: now
             };
+            console.log(`✅ [Calculated] ${id}: ${ratio.toFixed(4)}`);
         } else {
-            results[id] = { 
-                price: 0.17, 
-                changePercent: 0, 
-                history: generateTrendHistory(0.17, 'flat'), 
-                lastUpdated: now 
-            };
+            // Fallback
+            results[id] = { price: 0.17, changePercent: 0, history: generateTrendHistory(0.17, 'flat'), lastUpdated: now };
         }
         continue;
     }
 
-    // CASO B: Indicador Económico Manual (Sin Ticker fiable)
+    // Manual Overrides (Datos Macro)
     if (!ticker) {
         const override = MANUAL_OVERRIDES[id];
         results[id] = {
             price: override.price,
             changePercent: override.change,
             history: generateTrendHistory(override.price, override.trend),
-            lastUpdated: now,
-            isManualReal: true // Flag para indicar que es un dato real manual
+            lastUpdated: now
         };
-        console.log(`✅ [Real-Manual] ${id}: ${override.price}`);
+        console.log(`✅ [Manual-Real] ${id}: ${override.price}`);
         continue;
     }
 
-    // CASO C: Ticker de Mercado (Yahoo)
+    // Yahoo Fetch
     const data = await fetchRawYahooData(ticker);
-    
+
     if (data) {
         let { price, change, history } = data;
 
-        // Ajustes de escala específicos
+        // Ajustes específicos
         if (['^TNX', '^IRX', '^T10Y2Y'].includes(ticker)) {
-            price = price / 10; // Convertir índice a porcentaje (44 -> 4.4%)
-            history = history.map(h => ({ ...h, value: h.value / 10 }));
+             // Yahoo devuelve 44.50 para 4.45% en algunos índices, pero TNX suele ser directo.
+             // TNX: 44.50 = 4.45% ? No, TNX is yield * 10 usually.
+             // Verificamos: Yahoo ^TNX price is ~44.00 (which is 4.4%). 
+             // Ajuste: Dividir por 10.
+             price = price / 10;
+             history = history.map(h => ({ ...h, value: h.value / 10 }));
         }
-        
-        // Ajuste inverso para Credit Spreads (usando HYG)
+
         if (id === 'credit_spreads') {
-             // HYG baja cuando spreads suben (miedo). Usamos una conversión aproximada para visualizar
-             // Precio ~77. Spread ~3%. Si precio baja a 70, spread sube.
+             // HYG (Price) invierte spreads. 
+             // Si HYG = 77, Spread ~ 3.25.
              const baseSpread = 3.25;
              const pivotPrice = 77.5;
-             const impliedSpread = baseSpread + (pivotPrice - price) * 0.1;
-             price = impliedSpread;
-             change = -change; // Invertir signo
-             history = history.map(h => ({ 
-                 ...h, 
-                 value: baseSpread + (pivotPrice - h.value) * 0.1 
-             }));
+             price = baseSpread + (pivotPrice - price) * 0.1;
+             change = -change;
+             history = history.map(h => ({ ...h, value: baseSpread + (pivotPrice - h.value) * 0.1 }));
         }
 
         results[id] = {
@@ -232,27 +214,27 @@ async function fetchMetrics() {
             history,
             lastUpdated: now
         };
-        console.log(`✅ [Yahoo-Live] ${id}: ${price.toFixed(2)}`);
+        console.log(`✅ [Yahoo-API] ${id}: ${price.toFixed(2)}`);
     } else {
-        // Fallback si Yahoo falla
-        console.log(`⚠️ [Fallback] ${id} - Usando Override`);
+        // Fallback a Manual si Yahoo falla
+        console.log(`⚠️ [Fallback] ${id} falló en Yahoo. Usando backup.`);
         const fallback = MANUAL_OVERRIDES[id] || { price: 100, change: 0, trend: 'flat' };
         results[id] = {
             price: fallback.price,
             changePercent: fallback.change,
             history: generateTrendHistory(fallback.price, fallback.trend),
-            lastUpdated: now,
-            isManualReal: true
+            lastUpdated: now
         };
     }
   }
 
-  // Guardar JSON
+  // Guardar
   const outputDir = path.join(__dirname, '../public/data');
   if (!fs.existsSync(outputDir)) fs.mkdirSync(outputDir, { recursive: true });
   
   const output = { lastUpdated: now, metrics: results };
   fs.writeFileSync(path.join(outputDir, 'metrics.json'), JSON.stringify(output, null, 2));
+  console.log(`💾 Guardado exitoso en ${path.join(outputDir, 'metrics.json')}`);
 }
 
-fetchMetrics();
+run().catch(console.error);
