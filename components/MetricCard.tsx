@@ -43,7 +43,7 @@ const MetricCard: React.FC<MetricCardProps> = ({ data }) => {
     <div 
       className="bg-surface rounded-xl border border-slate-700 shadow-lg hover:shadow-2xl hover:border-slate-500 transition-all duration-300 flex flex-col h-[340px] group relative"
     >
-      {/* Header Section */}
+      {/* Header Section - No overflow hidden here to allow tooltip to pop out */}
       <div className="p-4 pb-2 flex flex-col justify-between items-start z-30 relative">
         <div className="w-full flex justify-between items-center pr-1">
            <div className="flex items-center gap-2 relative">
@@ -52,16 +52,20 @@ const MetricCard: React.FC<MetricCardProps> = ({ data }) => {
              </h3>
              
              {/* Info Icon */}
-             <div className="group/info relative flex items-center justify-center cursor-help">
+             <div 
+                className="group/info relative flex items-center justify-center cursor-help"
+                onClick={(e) => e.stopPropagation()} 
+             >
                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-3.5 h-3.5 text-slate-500 hover:text-blue-400 transition-colors">
                  <path fillRule="evenodd" d="M18 10a8 8 0 1 1-16 0 8 8 0 0 1 16 0ZM9 5a5.5 5.5 0 1 0 0 11 5.5 5.5 0 0 0 0-11Zm.75 2.25a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0ZM9 8.75a.75.75 0 0 1 .75.75v3.5a.75.75 0 0 1-1.5 0v-3.5a.75.75 0 0 1 .75-.75Z" clipRule="evenodd" />
                </svg>
                
-               {/* Tooltip Popup - Fixed Z-Index and Position */}
+               {/* Tooltip Popup - High Z-Index to overlap other cards */}
                {data.definition.description && (
                  <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 w-64 p-3 bg-slate-900/95 backdrop-blur-xl border border-slate-600 rounded-lg shadow-2xl text-xs text-slate-200 opacity-0 group-hover/info:opacity-100 pointer-events-none transition-opacity z-50">
                    <div className="font-semibold text-blue-300 mb-1 border-b border-slate-700 pb-1">Análisis</div>
                    <p className="leading-relaxed">{data.definition.description}</p>
+                   {/* Arrow */}
                    <div className="absolute top-full left-1/2 -translate-x-1/2 -mt-1 border-4 border-transparent border-t-slate-600"></div>
                  </div>
                )}
@@ -70,7 +74,7 @@ const MetricCard: React.FC<MetricCardProps> = ({ data }) => {
         </div>
         
         <div className="w-full flex justify-between items-baseline mt-2">
-            <span className={`text-3xl font-bold tracking-tight ${data.isSimulated ? 'text-amber-400' : 'text-white'}`} title={data.isSimulated ? "Estimado" : "Dato Real"}>
+            <span className={`text-3xl font-bold tracking-tight ${data.isSimulated ? 'text-amber-400' : 'text-white'}`} title={data.isSimulated ? "Estimado (Script no ejecutado)" : "Dato Real (Actualizado)"}>
               {data.currentValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               <span className="text-sm font-medium text-slate-500 ml-1">{data.definition.suffix}</span>
             </span>
@@ -84,7 +88,7 @@ const MetricCard: React.FC<MetricCardProps> = ({ data }) => {
         </div>
       </div>
 
-      {/* Chart Section - Rounded only at bottom, Overflow hidden HERE only */}
+      {/* Chart Section - Rounded only at bottom, Overflow hidden HERE only to mask chart lines */}
       <div className="flex-1 w-full min-h-0 relative -mt-4 overflow-hidden rounded-b-xl z-10">
         <ResponsiveContainer width="100%" height="100%">
           <AreaChart data={chartData} margin={{ top: 0, right: 0, left: 0, bottom: 0 }}>
@@ -100,13 +104,14 @@ const MetricCard: React.FC<MetricCardProps> = ({ data }) => {
 
             <Tooltip 
               contentStyle={{ 
-                backgroundColor: 'rgba(15, 23, 42, 0.9)', 
+                backgroundColor: 'rgba(15, 23, 42, 0.95)', 
                 backdropFilter: 'blur(8px)', 
                 borderColor: '#334155', 
                 color: '#f1f5f9', 
                 borderRadius: '8px', 
                 fontSize: '12px', 
-                padding: '8px' 
+                padding: '8px',
+                boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)'
               }}
               itemStyle={{ color: '#f1f5f9' }}
               labelStyle={{ color: '#94a3b8', marginBottom: '4px' }}
@@ -133,16 +138,16 @@ const MetricCard: React.FC<MetricCardProps> = ({ data }) => {
           </AreaChart>
         </ResponsiveContainer>
         
-        {/* Min/Max Labels */}
-        <div className="absolute right-2 top-6 text-[9px] text-slate-500 font-mono bg-slate-900/50 px-1 rounded backdrop-blur-sm pointer-events-none">
-            High: {maxValue.toLocaleString('en-US', { maximumFractionDigits: 1 })}
+        {/* Min/Max Labels Overlay */}
+        <div className="absolute right-2 top-6 text-[9px] text-slate-500 font-mono bg-slate-900/60 px-1.5 py-0.5 rounded backdrop-blur-sm pointer-events-none border border-slate-800/50">
+            H: {maxValue.toLocaleString('en-US', { maximumFractionDigits: 1 })}
         </div>
-        <div className="absolute right-2 bottom-12 text-[9px] text-slate-500 font-mono bg-slate-900/50 px-1 rounded backdrop-blur-sm pointer-events-none">
-            Low: {minValue.toLocaleString('en-US', { maximumFractionDigits: 1 })}
+        <div className="absolute right-2 bottom-12 text-[9px] text-slate-500 font-mono bg-slate-900/60 px-1.5 py-0.5 rounded backdrop-blur-sm pointer-events-none border border-slate-800/50">
+            L: {minValue.toLocaleString('en-US', { maximumFractionDigits: 1 })}
         </div>
 
         {/* Footer Link */}
-        <div className="absolute bottom-0 left-0 w-full h-9 border-t border-slate-800 bg-slate-900/80 flex justify-between items-center px-4 backdrop-blur-sm z-20">
+        <div className="absolute bottom-0 left-0 w-full h-9 border-t border-slate-800 bg-slate-900/90 flex justify-between items-center px-4 backdrop-blur-sm z-20">
             <div className="flex items-center gap-1.5 opacity-60">
                 <span className="text-[9px] uppercase tracking-wider font-bold text-slate-500">Fuente</span>
             </div>
@@ -152,12 +157,12 @@ const MetricCard: React.FC<MetricCardProps> = ({ data }) => {
                 href={data.sourceUrl} 
                 target="_blank" 
                 rel="noopener noreferrer"
-                className="flex items-center gap-2 text-[10px] text-blue-400 hover:text-blue-300 transition-colors"
+                className="flex items-center gap-2 text-[10px] text-blue-400 hover:text-blue-300 transition-colors group/link"
             >
                 <img 
                 src={faviconUrl} 
-                alt="src" 
-                className="w-3.5 h-3.5 rounded-sm"
+                alt="icon" 
+                className="w-3.5 h-3.5 rounded-sm opacity-80 group-hover/link:opacity-100"
                 onError={(e) => { e.currentTarget.style.display = 'none'; }}
                 />
                 <span className="font-medium">{capitalizedSource}</span>

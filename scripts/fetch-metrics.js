@@ -16,19 +16,20 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // Mapa de IDs a Tickers de Yahoo
+// Si es null, usa MANUAL_OVERRIDES exclusivamente
 const TICKER_MAP = {
-  'yield_curve': '^T10Y2Y',
+  'yield_curve': null, // Yahoo ticker ^T10Y2Y a veces falla, usamos manual
   'ism_pmi': null, 
-  'fed_funds': '^IRX', // Proxy: 13 Week Treasury Bill
-  'credit_spreads': 'HYG', // Proxy: iShares iBoxx $ High Yield Corp Bond ETF
+  'fed_funds': null, 
+  'credit_spreads': null, // HYG es proxy sucio, mejor manual
   'm2_growth': null, 
   'unemployment': null,
   'lei': null, 
   'nfp': null,
   'cpi': null,
   'consumer_conf': null, 
-  'buffett': '^GSPC', // Proxy: S&P 500 Market Cap proxy
-  'cape': '^GSPC', 
+  'buffett': null, // Yahoo no tiene GDP
+  'cape': null, 
   'bond_vs_stock': null, 
   'sp500_margin': null,
   'vix': '^VIX',
@@ -45,7 +46,10 @@ const TICKER_MAP = {
 // DATOS REALES (Actualizados Enero/Febrero 2025)
 // Se usan cuando Yahoo no tiene un ticker directo para el indicador económico.
 const MANUAL_OVERRIDES = {
+  'yield_curve': { price: 0.16, change: 0.02, trend: 'up' }, // 10Y-2Y Spread positivo reciente
   'ism_pmi': { price: 48.4, change: 0.0, trend: 'flat' }, 
+  'fed_funds': { price: 4.50, change: 0.0, trend: 'flat' },
+  'credit_spreads': { price: 3.10, change: -0.05, trend: 'down' },
   'unemployment': { price: 4.2, change: 0.0, trend: 'flat' }, 
   'cpi': { price: 2.7, change: 0.1, trend: 'up' }, 
   'm2_growth': { price: 1.8, change: 0.2, trend: 'up' },
@@ -56,8 +60,6 @@ const MANUAL_OVERRIDES = {
   'sp500_margin': { price: 12.1, change: 0.0, trend: 'flat' },
   'fear_greed': { price: 48, change: -2, trend: 'down' },
   'bond_vs_stock': { price: 0.85, change: 0.01, trend: 'up' },
-  
-  // Estos se calculan derivados del precio del S&P 500 si falla el cálculo dinámico
   'buffett': { price: 198.5, change: 0.5, trend: 'up' }, 
   'cape': { price: 36.2, change: 0.1, trend: 'up' }
 };
@@ -169,7 +171,7 @@ async function run() {
         continue;
     }
 
-    // Manual Overrides (Datos Macro)
+    // Manual Overrides (Datos Macro o Fallback de Tickers)
     if (!ticker) {
         const override = MANUAL_OVERRIDES[id];
         results[id] = {
@@ -190,22 +192,12 @@ async function run() {
 
         // Ajustes específicos
         if (['^TNX', '^IRX', '^T10Y2Y'].includes(ticker)) {
-             // Yahoo devuelve 44.50 para 4.45% en algunos índices, pero TNX suele ser directo.
-             // TNX: 44.50 = 4.45% ? No, TNX is yield * 10 usually.
-             // Verificamos: Yahoo ^TNX price is ~44.00 (which is 4.4%). 
-             // Ajuste: Dividir por 10.
-             price = price / 10;
-             history = history.map(h => ({ ...h, value: h.value / 10 }));
-        }
-
-        if (id === 'credit_spreads') {
-             // HYG (Price) invierte spreads. 
-             // Si HYG = 77, Spread ~ 3.25.
-             const baseSpread = 3.25;
-             const pivotPrice = 77.5;
-             price = baseSpread + (pivotPrice - price) * 0.1;
-             change = -change;
-             history = history.map(h => ({ ...h, value: baseSpread + (pivotPrice - h.value) * 0.1 }));
+             // Yahoo devuelve precios como 44.50 para 4.45% en algunos casos de bonos
+             // Lógica: Si es > 10 y es una tasa, probablemente necesite división
+             if (price > 10) {
+                 price = price / 10;
+                 history = history.map(h => ({ ...h, value: h.value / 10 }));
+             }
         }
 
         results[id] = {

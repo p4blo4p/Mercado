@@ -109,8 +109,6 @@ export const fetchDashboardData = async (
 
       // Filter/Slice history based on selected Range
       let rawHistory = metricData.history || [];
-      // If we have history, we try to use it. 
-      // Note: DataService should ideally normalize date strings if needed.
       let history = rawHistory;
       if (history.length > days) {
         history = history.slice(-days);
