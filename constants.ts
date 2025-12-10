@@ -380,10 +380,10 @@ export const METRICS: MetricDefinition[] = [
     name: 'Ratio Cobre/Oro', 
     category: 'Ratio',
     searchQuery: 'current Copper to Gold Ratio',
-    description: 'Apetito de Riesgo (Risk-on): > 0.18. Aversión al Riesgo (Miedo): < 0.15.',
+    description: 'Apetito de Riesgo (Risk-on): > 0.00010. Aversión al Riesgo (Miedo): < 0.00008.',
     thresholds: {
-      goodLevel: 0.18, goodDirection: 'above',
-      badLevel: 0.15, badDirection: 'below'
+      goodLevel: 0.00010, goodDirection: 'above',
+      badLevel: 0.00008, badDirection: 'below'
     },
     urls: {
       [DataSource.GENERAL]: 'https://www.longtermtrends.net/copper-gold-ratio/',
@@ -394,6 +394,7 @@ export const METRICS: MetricDefinition[] = [
 ];
 
 export const TIME_RANGE_DAYS: Record<TimeRange, number> = {
+  [TimeRange.D1]: 1,
   [TimeRange.D7]: 7,
   [TimeRange.M1]: 30,
   [TimeRange.M3]: 90,

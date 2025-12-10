@@ -1,5 +1,6 @@
 
 export enum TimeRange {
+  D1 = '1d',
   D7 = '7d',
   M1 = '1m',
   M3 = '3m',

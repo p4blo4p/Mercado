@@ -9,7 +9,7 @@ const REALISTIC_DEFAULTS: Record<string, number> = {
   consumer_conf: 102.5, buffett: 198.0, cape: 36.2, bond_vs_stock: 0.85,
   sp500_margin: 12.4, vix: 15.8, fear_greed: 52, put_call: 0.88,
   sp500_ma200: 5900, '10y_yield': 4.35, oil_wti: 69.50, dxy: 102.1,
-  retail_sales: 2.4, copper_gold: 0.17
+  retail_sales: 2.4, copper_gold: 0.00008
 };
 
 // Types for the static JSON file
@@ -68,7 +68,7 @@ const simulateData = (days: number, source: DataSource): MetricData[] => {
 export const fetchDashboardData = async (
   source: DataSource,
   range: TimeRange
-): Promise<MetricData[]> => {
+): Promise<{ data: MetricData[], lastUpdated: string | null }> => {
   const days = TIME_RANGE_DAYS[range];
 
   try {
@@ -76,9 +76,7 @@ export const fetchDashboardData = async (
     let response = await fetch(`./data/metrics.json?t=${new Date().getTime()}`);
     
     // 2. Fallback: Try fetching from GitHub Raw (if running locally but want real data)
-    // Updated to point to p4blo4p/Mercado
     if (!response.ok) {
-        // console.log("Local data not found, trying GitHub Raw...");
         response = await fetch(`https://raw.githubusercontent.com/p4blo4p/Mercado/main/public/data/metrics.json?t=${new Date().getTime()}`);
     }
 
@@ -87,9 +85,10 @@ export const fetchDashboardData = async (
     }
 
     const staticData: StaticDataResponse = await response.json();
+    const lastUpdated = staticData.lastUpdated || null;
     
     // 3. Map static data to application model
-    return METRICS.map((metric) => {
+    const metrics = METRICS.map((metric) => {
       const metricData = staticData.metrics[metric.id];
       const reliableUrl = metric.urls[source] || metric.urls[DataSource.GENERAL];
 
@@ -110,10 +109,16 @@ export const fetchDashboardData = async (
       // Filter/Slice history based on selected Range
       let rawHistory = metricData.history || [];
       let history = rawHistory;
-      if (history.length > days) {
-        history = history.slice(-days);
-      } else if (history.length === 0) {
-        history = generateTrendHistory(metricData.price, metricData.changePercent, days);
+      
+      // Handle D1: Just show very recent context or 2 points
+      if (range === TimeRange.D1) {
+          history = history.slice(-5); // Last 5 points for immediate context
+      } else {
+          if (history.length > days) {
+            history = history.slice(-days);
+          } else if (history.length === 0) {
+            history = generateTrendHistory(metricData.price, metricData.changePercent, days);
+          }
       }
 
       return {
@@ -127,9 +132,11 @@ export const fetchDashboardData = async (
       };
     });
 
+    return { data: metrics, lastUpdated };
+
   } catch (error) {
     console.warn("Could not load static real-time data, falling back to simulation.", error);
     // If local dev or file doesn't exist yet, show simulation
-    return simulateData(days, source);
+    return { data: simulateData(days, source), lastUpdated: null };
   }
 };

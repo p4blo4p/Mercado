@@ -11,6 +11,7 @@ interface ControlPanelProps {
   loading: boolean;
   onAnalyze: () => void;
   analyzing: boolean;
+  lastUpdated: string | null;
 }
 
 const ControlPanel: React.FC<ControlPanelProps> = ({
@@ -21,10 +22,16 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
   onRefresh,
   loading,
   onAnalyze,
-  analyzing
+  analyzing,
+  lastUpdated
 }) => {
+  // Format last updated string
+  const formattedDate = lastUpdated 
+    ? new Date(lastUpdated).toLocaleString('es-ES', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
+    : null;
+
   return (
-    <div className="sticky top-0 z-50 bg-background/95 backdrop-blur-md border-b border-slate-700 pb-4 pt-4 px-4 mb-6 shadow-xl">
+    <div className="sticky top-0 z-[100] bg-background/95 backdrop-blur-md border-b border-slate-700 pb-4 pt-4 px-4 mb-6 shadow-xl">
       <div className="max-w-7xl mx-auto flex flex-col lg:flex-row justify-between items-center gap-4">
         
         {/* Logo / Title */}
@@ -32,9 +39,16 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
            <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center font-bold text-white shadow-blue-500/20 shadow-lg">
              M
            </div>
-           <h1 className="text-xl font-bold tracking-tight text-white hidden sm:block">
-             MacroLoop <span className="text-slate-500 font-normal">Analytics</span>
-           </h1>
+           <div>
+              <h1 className="text-xl font-bold tracking-tight text-white hidden sm:block leading-none">
+                MacroLoop <span className="text-slate-500 font-normal">Analytics</span>
+              </h1>
+              {formattedDate && (
+                  <span className="text-[9px] text-slate-500 block mt-0.5">
+                    Actualizado: {formattedDate}
+                  </span>
+              )}
+           </div>
         </div>
 
         {/* Controls Container */}
@@ -71,13 +85,13 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
               <button
                 key={range}
                 onClick={() => onRangeChange(range)}
-                className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all duration-200 ${
+                className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all duration-200 uppercase ${
                   selectedRange === range
                     ? 'bg-blue-600 text-white shadow-blue-500/20 shadow-sm'
                     : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800'
                 }`}
               >
-                {range.toUpperCase()}
+                {range}
               </button>
             ))}
           </div>

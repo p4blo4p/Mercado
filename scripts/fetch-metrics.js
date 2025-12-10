@@ -72,7 +72,7 @@ async function fetchRawYahooData(ticker) {
     
     const response = await fetch(url, {
       headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
       }
     });
 
@@ -141,8 +141,8 @@ async function run() {
   const now = new Date().toISOString();
 
   // 1. Commodities (Cobre/Oro)
-  let copper = null;
-  let gold = null;
+  let copper = null; // $/lb
+  let gold = null; // $/oz
   const cData = await fetchRawYahooData('HG=F');
   const gData = await fetchRawYahooData('GC=F');
   if (cData) copper = cData.price;
@@ -154,16 +154,19 @@ async function run() {
     // Ratio Cobre/Oro
     if (id === 'copper_gold') {
         if (copper && gold) {
-            const ratio = copper / gold;
+            // Conversión: 1 lb Cobre = 14.5833 oz troy
+            // Precio Cobre ($/oz) = Precio Cobre ($/lb) / 14.5833
+            const copperPerOz = copper / 14.5833;
+            const ratio = copperPerOz / gold;
             results[id] = {
                 price: ratio,
                 changePercent: (cData?.change || 0) - (gData?.change || 0),
                 history: generateTrendHistory(ratio, 'flat'),
                 lastUpdated: now
             };
-            console.log(`✅ [Calculated] ${id}: ${ratio.toFixed(4)}`);
+            console.log(`✅ [Calculated] ${id}: ${ratio.toFixed(6)}`);
         } else {
-            results[id] = { price: 0.17, changePercent: 0, history: generateTrendHistory(0.17, 'flat'), lastUpdated: now };
+            results[id] = { price: 0.00008, changePercent: 0, history: generateTrendHistory(0.00008, 'flat'), lastUpdated: now };
         }
         continue;
     }

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { DataSource, MetricData, TimeRange, AppSettings } from './types';
 import { fetchDashboardData } from './services/dataService';
@@ -11,6 +12,7 @@ const STORAGE_KEY = 'macroloop_settings_v1';
 const App: React.FC = () => {
   // State
   const [data, setData] = useState<MetricData[]>([]);
+  const [lastUpdated, setLastUpdated] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [analyzing, setAnalyzing] = useState<boolean>(false);
   const [aiAnalysis, setAiAnalysis] = useState<string | null>(null);
@@ -41,8 +43,9 @@ const App: React.FC = () => {
   const loadData = useCallback(async () => {
     setLoading(true);
     try {
-      const results = await fetchDashboardData(settings.dataSource, settings.timeRange);
+      const { data: results, lastUpdated: updated } = await fetchDashboardData(settings.dataSource, settings.timeRange);
       setData(results);
+      setLastUpdated(updated);
     } catch (error) {
       console.error("Failed to fetch data", error);
     } finally {
@@ -89,6 +92,7 @@ const App: React.FC = () => {
         loading={loading}
         onAnalyze={handleAnalyze}
         analyzing={analyzing}
+        lastUpdated={lastUpdated}
       />
 
       <main className="max-w-7xl mx-auto px-4">

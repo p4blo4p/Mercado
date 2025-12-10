@@ -8,10 +8,24 @@ interface MetricCardProps {
 }
 
 const MetricCard: React.FC<MetricCardProps> = ({ data }) => {
-  const isPositive = data.changePercent >= 0; 
+  const chartData = useMemo(() => data.history, [data.history]);
+  
+  // Calculate dynamic change based on the visible history range
+  const { calculatedChange, calculatedPercent } = useMemo(() => {
+     if (chartData.length < 2) {
+         return { calculatedChange: data.change, calculatedPercent: data.changePercent };
+     }
+     const startValue = chartData[0].value;
+     const endValue = data.currentValue;
+     const change = endValue - startValue;
+     // Avoid division by zero
+     const percent = startValue !== 0 ? (change / startValue) * 100 : 0;
+     return { calculatedChange: change, calculatedPercent: percent };
+  }, [chartData, data.currentValue, data.change, data.changePercent]);
+
+  const isPositive = calculatedPercent >= 0; 
   const sentimentColor = isPositive ? '#10b981' : '#ef4444'; 
 
-  const chartData = useMemo(() => data.history, [data.history]);
   const thresholds = data.definition.thresholds;
 
   const allValues = data.history.map(d => d.value);
@@ -42,7 +56,7 @@ const MetricCard: React.FC<MetricCardProps> = ({ data }) => {
 
   return (
     <div 
-      className="bg-surface rounded-xl border border-slate-700 shadow-lg hover:shadow-2xl hover:border-slate-500 transition-all duration-300 flex flex-col h-[360px] group relative"
+      className="bg-surface rounded-xl border border-slate-700 shadow-lg hover:shadow-2xl hover:border-slate-500 transition-all duration-300 flex flex-col h-[360px] group relative hover:z-50"
     >
       {/* Header Section */}
       <div className="p-4 pb-2 flex flex-col justify-between items-start z-30 relative">
@@ -76,14 +90,14 @@ const MetricCard: React.FC<MetricCardProps> = ({ data }) => {
         
         <div className="w-full flex justify-between items-baseline mt-2">
             <span className={`text-3xl font-bold tracking-tight ${data.isSimulated ? 'text-amber-400' : 'text-white'}`} title={data.isSimulated ? "Estimado (Script no ejecutado)" : "Dato Real (Actualizado)"}>
-              {data.currentValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              {data.currentValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 4 })}
               <span className="text-sm font-medium text-slate-500 ml-1">{data.definition.suffix}</span>
             </span>
             
             <div className={`text-right ${sentimentColor}`}>
               <div className={`text-xs font-bold px-2 py-1 rounded-md flex items-center gap-1 ${isPositive ? 'bg-emerald-500/10 text-emerald-400' : 'bg-red-500/10 text-red-400'}`}>
                 <span>{isPositive ? '▲' : '▼'}</span>
-                <span>{Math.abs(data.changePercent).toFixed(2)}%</span>
+                <span>{Math.abs(calculatedPercent).toFixed(2)}%</span>
               </div>
             </div>
         </div>
@@ -117,7 +131,7 @@ const MetricCard: React.FC<MetricCardProps> = ({ data }) => {
               itemStyle={{ color: '#f1f5f9' }}
               labelStyle={{ color: '#94a3b8', marginBottom: '4px' }}
               cursor={{ stroke: '#475569', strokeDasharray: '4 4' }}
-              formatter={(val:number) => [val.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2}), 'Valor']}
+              formatter={(val:number) => [val.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:4}), 'Valor']}
             />
             
             {thresholds?.goodLevel !== undefined && (
