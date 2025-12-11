@@ -23,6 +23,6 @@
     "vite": "*",
     "typescript": "*",
     "yahoo-finance2": "*",
-    "axio": "*"
+    "axios": "*"
   }
 }
